@@ -19,11 +19,6 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             return res.status(400).send({error: 'invalid_request', error_description: 'client_id is missing'});
         }
 
-        const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
-        if (clientData ==null || clientData.Item ==null){
-            return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
-        }
-                
         var context = {
             request: req,
             grant_type: grant_type,
@@ -35,6 +30,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         var issuer = utils.getCurrentIssuer(req.hostname);
                 
         if ( context.grant_type === 'authorization_code' || context.grant_type === 'refresh_token'  ) { // authorization code grant
+            const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
+            if (clientData ==null || clientData.Item ==null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+            }        
             if (context.grant_type === 'authorization_code') {
                 // validate redirect_uri
                 if (req.body.redirect_uri == null) {
@@ -161,7 +160,11 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             var password = req.body.password;                    
             context.scope = req.body.scope;
             context.client_id = client_id;
-            
+            const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
+            if (clientData ==null || clientData.Item ==null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+            }
+                        
               try {
                 var loginScript = '../../configuration/authentication/authentication_script.js';
                 const handler = await import(loginScript);
@@ -233,15 +236,34 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
               }     
         } else if ( context.grant_type === 'urn:ietf:params:oauth:grant-type:jwt-bearer' ) {  // jwt-bearer grant
             // TODO: validate required parameters as per the spec
-            var username = req.body.username;
-            var password = req.body.password;                    
+            var assertion = req.body.assertion;
             context.scope = req.body.scope;
             context.client_id = client_id;
             
+            // validate redirect_uri
+            if (assertion == null) {
+                return res.status(400).send({error: 'invalid_request', error_description: 'assertion is missing'});
+            }
+                            
+            var assertionPayload = null;    
+            try {
+                const decoded = jwt.verify(assertion, cryptoKeys.publicKey, { algorithms: ['RS256']});
+                assertionPayload = decoded;
+            }
+            catch (ex) { console.log(ex.message); }
+            
+            client_id = assertionPayload.aud;
+                    
+            const clientData = await utils.getClientCredentials(docClient, globalConfiguration, client_id);
+            if (clientData ==null || clientData.Item ==null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+            }
+                    
               try {
-                var loginScript = '../../configuration/authentication/authentication_script.js';
-                const handler = await import(loginScript);
-                handler.default(username, password, authenticationScriptConfiguration, function (error, user) {
+                var hookScript = '../../configuration/hooks/post_authentication_hook.js';
+                const handler = await import(hookScript);
+                // TODO: run a for loop of all the rules here to enhance to id_token
+                handler.default(user, context, postAuthenticationConfiguration.configuration, async function (error, user, context) {
                     if (user) {
                         const jwtOptions = {
                             algorithm: 'RS256', 
@@ -250,44 +272,14 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             issuer: issuer, 
                             expiresIn: cryptoKeys.JWT_EXPIRY_SECONDS
                         }
-                        var claims = utils.getIdTokenClaims(user.id, user, context.scope, null);
-                        jwt.sign(claims, cryptoKeys.privateKey, jwtOptions, async function(err, token) {
-                            var access_token = jwt.sign({sub: user.id}, cryptoKeys.privateKey, jwtOptions);
-                            var response = {
-                                "id_token": token,
-                                "scope": context.scope,
-                                "access_token": access_token,
-                                "token_type": "bearer"
-                            }
-                            if(context.scope.includes('offline_access')) {
-                                var sessionId = uid.sync(40);
-                                var token = uid.sync(40);
-                                var refreshToken = new RefreshToken(token, sessionId, context.client_id, user.id, context.scope, null);                            
-                                // store refreshToken in the database
-                                const create_params = {
-                                  TableName : globalConfiguration.dynamoDBTablesNames.refreshToken,
-                                  Item: refreshToken,
-                                  ReturnValues: "NONE"
-                                }
-                                const result = await docClient.put(create_params).promise();
-                                //console.log(result);
-                                // TODO: add error handling
-                                response.refresh_token = token;
-
-                                // store session in the database
-                                var session = new Session(sessionId, user.id);
-                                const create_session_params = {
-                                  TableName : globalConfiguration.dynamoDBTablesNames.ssoSession,
-                                  Item: session,
-                                  ReturnValues: "NONE"
-                                }
-                                // set session in db
-                                create_session_params.Item.user = user;
-                                create_session_params.Item.ttl = Math.floor(Date.now() / 1000) + 900000 /*dynamodb_ttl*/;
-                                docClient.put(create_session_params).promise();
-                            }
-                            return res.status(200).send(response);
-                        });                     
+                        var access_token = jwt.sign({sub: user.id}, cryptoKeys.privateKey, jwtOptions);
+                        var response = {
+                            "id_token": token,
+                            "scope": context.scope,
+                            "access_token": access_token,
+                            "token_type": "bearer"
+                        }
+                        return res.status(200).send(response);
                     } else if (error) {
                         return res.status(401).send(error);
                     } else {
@@ -308,16 +300,40 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 return res.status(500).send(error);
               }     
         } else if ( context.grant_type === 'client_credentials' ) {  // client_credentials grant
-            // TODO: validate required parameters as per the spec
-            var username = req.body.username;
-            var password = req.body.password;                    
+                                    
+            // validate scope
+            if (req.body.scope == null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'scope is missing'});
+            }
+            var scopes = req.body.scope.split(' ');
+            var clientFound = {}
+            if (scopes.includes('create:client')) {
+                clientFound.client_id = globalConfiguration.clientAPICredentials.client_id;
+                clientFound.client_secret = globalConfiguration.clientAPICredentials.client_secret;
+            }else{
+                const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
+                if (clientData ==null || clientData.Item ==null){
+                    return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+                }
+                clientFound.client_id = clientData.Item.client_id;
+                clientFound.client_secret = clientData.Item.client_secret;                                
+            }               
+            
+            // validate client_secret
+            if (req.body.client_secret == null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_secret is missing'});
+            }
+            var client_secret = req.body.client_secret;            
+            if (client_secret ==null || client_secret !== clientFound.client_secret){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_secret is invalid'});
+            }                                      
             context.scope = req.body.scope;
             context.client_id = client_id;
             
               try {
-                var loginScript = '../../configuration/authentication/authentication_script.js';
-                const handler = await import(loginScript);
-                handler.default(username, password, authenticationScriptConfiguration, function (error, user) {
+                var hookScript = '../../configuration/hooks/client_credentials_grant_hook.js';
+                const handler = await import(hookScript);
+                handler.default(clientFound, context, postAuthenticationConfiguration.configuration, async function (error, user, context) {
                     if (user) {
                         const jwtOptions = {
                             algorithm: 'RS256', 
@@ -326,44 +342,13 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             issuer: issuer, 
                             expiresIn: cryptoKeys.JWT_EXPIRY_SECONDS
                         }
-                        var claims = utils.getIdTokenClaims(user.id, user, context.scope, null);
-                        jwt.sign(claims, cryptoKeys.privateKey, jwtOptions, async function(err, token) {
-                            var access_token = jwt.sign({sub: user.id}, cryptoKeys.privateKey, jwtOptions);
-                            var response = {
-                                "id_token": token,
-                                "scope": context.scope,
-                                "access_token": access_token,
-                                "token_type": "bearer"
-                            }
-                            if(context.scope.includes('offline_access')) {
-                                var sessionId = uid.sync(40);
-                                var token = uid.sync(40);
-                                var refreshToken = new RefreshToken(token, sessionId, context.client_id, user.id, context.scope, null);                            
-                                // store refreshToken in the database
-                                const create_params = {
-                                  TableName : globalConfiguration.dynamoDBTablesNames.refreshToken,
-                                  Item: refreshToken,
-                                  ReturnValues: "NONE"
-                                }
-                                const result = await docClient.put(create_params).promise();
-                                //console.log(result);
-                                // TODO: add error handling
-                                response.refresh_token = token;
-
-                                // store session in the database
-                                var session = new Session(sessionId, user.id);
-                                const create_session_params = {
-                                  TableName : globalConfiguration.dynamoDBTablesNames.ssoSession,
-                                  Item: session,
-                                  ReturnValues: "NONE"
-                                }
-                                // set session in db
-                                create_session_params.Item.user = user;
-                                create_session_params.Item.ttl = Math.floor(Date.now() / 1000) + 900000 /*dynamodb_ttl*/;
-                                docClient.put(create_session_params).promise();
-                            }
-                            return res.status(200).send(response);
-                        });                     
+                        var access_token = jwt.sign({sub: user.id}, cryptoKeys.privateKey, jwtOptions);
+                        var response = {
+                            "scope": context.scope,
+                            "access_token": access_token,
+                            "token_type": "bearer"
+                        }
+                        return res.status(200).send(response);
                     } else if (error) {
                         return res.status(401).send(error);
                     } else {

@@ -14,7 +14,6 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
     
         var user = null;    
         try {
-            // TODO: must implement verification
             const decoded = jwt.verify(userToken, cryptoKeys.publicKey, { algorithms: ['RS256']});
             user = decoded;
         }

@@ -9,6 +9,7 @@ import Authenticate from './oidc/Authenticate.js';
 import PostAuthenticationHandler from './oidc/PostAuthenticationHandler.js';
 import OAuthToken from './oidc/OAuthToken.js';
 import WellKnownDiscoveryDocument from './oidc/WellKnownDiscoveryDocument.js'
+import UserInfo from './oidc/UserInfo.js'
 import APIs from './api/APIs.js';
 import cookieParser from 'cookie-parser';
 import jwksJson from '../signing-keys-and-certs/jwks.json';
@@ -67,6 +68,9 @@ app.use('/postauth/handler', PostAuthenticationHandler({ docClient, globalConfig
 
 // token API
 app.use('/oauth2/token', OAuthToken({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, postAuthenticationConfiguration }));
+
+// UserInfo which validates client_id and other authentication request params
+app.use('/oauth2/userinfo', UserInfo({ globalConfiguration, cryptoKeys }));
 
 // swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

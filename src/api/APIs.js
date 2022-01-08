@@ -3,6 +3,25 @@ const utils  =  require('../lib/util');
 const Clients = require('../api/Clients');
 const ErrorHandler = require('../lib/ErrorHandler');
 const SingletonClientCredentialsCache = require('../client_credentials_cache');
+const expressJwt = require('express-jwt');
+
+function validateAPIToken(globalConfiguration, cryptoKeys) {
+    const getPublicKey = function (req, payload, done) {
+        //console.log(payload);
+        if(!payload) {
+            return done(new Error('UnauthorizedError', 'Invalid token.'));
+        }
+        const jwtIssuer = payload.iss;
+        var currentIssuer = utils.getCurrentIssuer(req.hostname);
+        if(!jwtIssuer || !currentIssuer || jwtIssuer !== currentIssuer) {
+            return done(new Error('UnauthorizedError', 'Invalid issuer.'));
+        }
+        
+        done(null, cryptoKeys.publicKey);
+    };
+    return expressJwt({ secret: getPublicKey, algorithms: ['RS256']  });
+};
+
 
 module.exports = ({ docClient, globalConfiguration, cryptoKeys }) => {
     // periodically fetch and cache all client credentials
@@ -23,7 +42,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys }) => {
         
     let api = Router();
     
-    api.use('/clients', Clients({ docClient, globalConfiguration }));
+    api.use('/clients', validateAPIToken(globalConfiguration, cryptoKeys), Clients({ docClient, globalConfiguration }));
 
     // error handler    
     api.use(ErrorHandler);
