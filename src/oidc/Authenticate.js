@@ -14,7 +14,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         var response_type = req.body.response_type || 'code'
         var state = req.body.state || ''
         var nonce = req.body.nonce || ''
-        console.log(req.body);
+        //console.log(req.body);
         var issuer = utils.getCurrentIssuer(req.hostname);
 
         // validate client_id
@@ -30,7 +30,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         try {
             const handler = await import('../../configuration/authentication/authentication_script.js');
             handler.default(username, password, authenticationScriptConfiguration, function (error, user) {
-                console.log(user);
+                //console.log(user);
                 if (user) {
                     var currentTime = Date.now();
                     var jwtPayload = user;
@@ -41,7 +41,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                     jwtPayload.exp = currentTime + cryptoKeys.JWT_EXPIRY_SECONDS; // TODO: make expiration configurable
 
                     jwt.sign(jwtPayload, cryptoKeys.privateKey, { algorithm: 'RS256' }, function(err, token) {
-                        console.log(err);
+                        //console.log(err);
                         var context = {
                             response_type: response_type,
                             client_id: client_id,
@@ -60,7 +60,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                                 <input type="submit" value="Submit">\
                             </noscript>\
                         </form>'
-                        console.log(response)                          
+                        //console.log(response)                          
                         return res.status(200).send(response);
                     });                     
                 } else if (error) {

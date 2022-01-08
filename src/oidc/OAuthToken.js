@@ -12,7 +12,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         var client_id = req.body.client_id;
         var grant_type = req.body.grant_type;
         var redirect_uri = req.body.redirect_uri;
-        console.log(req.body);
+        //console.log(req.body);
 
         // validate client_id
         if (req.body.client_id == null){
@@ -62,7 +62,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                     }          
                 }            
                 const codeData = await docClient.get(get_code_params).promise();
-                console.log(codeData);
+                //console.log(codeData);
                 context.scope = codeData.Item.scope;
                 context.nonce = codeData.Item.nonce;
                 context.client_id = codeData.Item.client_id;
@@ -81,7 +81,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 if (refreshTokenData==null || refreshTokenData.Item==null || refreshTokenData.Item.subject == null){
                     return res.status(400).send({error: 'invalid_request', error_description: 'refresh_token is invalid'});
                 }                
-                console.log(refreshTokenData);
+                //console.log(refreshTokenData);
                 context.scope = refreshTokenData.Item.scope || 'openid given_name family_name email';
                 context.nonce = refreshTokenData.Item.nonce;
                 context.client_id = refreshTokenData.Item.client_id;
@@ -95,7 +95,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 }          
             }        
             const sessionData = await docClient.get(get_session_params).promise();
-            console.log(sessionData);
+            //console.log(sessionData);
             
             var user = sessionData.Item.user;
               try {
@@ -103,7 +103,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 const handler = await import(hookScript);
                 // TODO: run a for loop of all the rules here to enhance to id_token
                 handler.default(user, context, postAuthenticationConfiguration.configuration, async function (error, user, context) {
-                    console.log(user);
+                    //console.log(user);
                     if (user) {
                         const jwtOptions = {
                             algorithm: 'RS256', 
@@ -131,7 +131,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                               ReturnValues: "NONE"
                             }
                             const result = await docClient.put(create_params).promise();
-                            console.log(result);
+                            //console.log(result);
                             // TODO: add error handling
                             response.refresh_token = token;
                         }
@@ -194,7 +194,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                                   ReturnValues: "NONE"
                                 }
                                 const result = await docClient.put(create_params).promise();
-                                console.log(result);
+                                //console.log(result);
                                 // TODO: add error handling
                                 response.refresh_token = token;
 
@@ -270,7 +270,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                                   ReturnValues: "NONE"
                                 }
                                 const result = await docClient.put(create_params).promise();
-                                console.log(result);
+                                //console.log(result);
                                 // TODO: add error handling
                                 response.refresh_token = token;
 
@@ -346,7 +346,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                                   ReturnValues: "NONE"
                                 }
                                 const result = await docClient.put(create_params).promise();
-                                console.log(result);
+                                //console.log(result);
                                 // TODO: add error handling
                                 response.refresh_token = token;
 

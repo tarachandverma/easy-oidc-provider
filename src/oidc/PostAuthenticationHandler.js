@@ -21,7 +21,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
         catch (ex) { console.log(ex.message); }
                 
         var requestContext = JSON.parse(req.body.ctx);
-        console.log('RequestContext', requestContext);
+        //console.log('RequestContext', requestContext);
         
         var context = {
             request: req,
@@ -62,7 +62,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
                     create_params.Item.user = user;
                     create_params.Item.ttl = Math.floor(Date.now() / 1000) + 900000 /*dynamodb_ttl*/;
                     docClient.put(create_params, function(err, data) {
-                        console.log(err);
+                        //console.log(err);
                         res.cookie("session", sessionId, { expires: new Date(Date.now() + 900000), httpOnly: true, secure: true, sameSite: "none" })
 
                         var location = context.redirect_uri;

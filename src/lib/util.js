@@ -3,13 +3,13 @@ const SingletonClientCredentialsCache = require('../client_credentials_cache');
 
 // USE IT FOR ENCRYPTING AND STORING IN VAULT
 function encryptPayload(payload, encryptionKey) {
-    console.log("#################");
-    console.log("payload: " + payload);
-    console.log("EncryptionKey: " + encryptionKey);    
+    //console.log("#################");
+    //console.log("payload: " + payload);
+    //console.log("EncryptionKey: " + encryptionKey);    
    
     // generate 16 bytes of random data
     const initVector = crypto.randomBytes(16).toString("hex").slice(0, 16);
-    console.log("initVector: " + initVector);
+    //console.log("initVector: " + initVector);
     
     // make the encrypter function
     const encrypter = crypto.createCipheriv("aes-256-cbc", encryptionKey, initVector);
@@ -24,11 +24,11 @@ function encryptPayload(payload, encryptionKey) {
     // output encoding to hex
     encryptedMsg += encrypter.final("hex");
     
-    console.log("Encrypted payload : " + encryptedMsg);
+    //console.log("Encrypted payload : " + encryptedMsg);
     
     const encryptedPayload = initVector + "." + encryptedMsg;
-    console.log("Encrypted payload with IV prefix: " + encryptedPayload);
-    console.log("#################");
+    //console.log("Encrypted payload with IV prefix: " + encryptedPayload);
+    //console.log("#################");
     return encryptedPayload;
 }
 

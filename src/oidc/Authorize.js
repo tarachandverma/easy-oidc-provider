@@ -43,7 +43,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
                 }          
             }        
             const sessionData = await docClient.get(get_session_params).promise();
-            console.log("sessionData: ", sessionData)
+            //console.log("sessionData: ", sessionData)
             if(sessionData==null || sessionData.Item==null || sessionData.Item.user==null) {
                 if(queryObject.state) {
                     var originalState =  queryObject.state;
@@ -77,8 +77,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
                 const handler = await import(hookScript);
                 // TODO: run a for loop of all the rules here to enhance to id_token
                 handler.default(user, context, postAuthenticationConfiguration.configuration, function (error, user, context) {
-                    console.log(user)
-                    console.log(error);
+                    //console.log(user)
+                    //console.log(error);
                     if (user) {
                         // store session in the database
                         const update_params = {
