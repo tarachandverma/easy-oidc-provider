@@ -1,5 +1,5 @@
 # easy-oidc-provider - nodejs Easy to setup OpenID Connect Provider
-OpenID Connect Provider implementation, configure your OP in few minutes
+OpenID Connect Provider implementation, configure your OpenID-Connect Provider in few minutes
 
 # Prerequisites
 (1) Generate RSA keypair for JWT signing
