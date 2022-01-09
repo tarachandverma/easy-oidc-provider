@@ -5,7 +5,7 @@ const uid = require('uid-safe');
 const RefreshToken = require('../models/RefreshToken')
 const Session = require('../models/Session')
 
-module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, postAuthenticationConfiguration }) => {
+module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, globalHooksConfiguration }) => {
     let api = Router();
 
     api.post('/', async (req, res) => {
@@ -101,7 +101,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 var hookScript = '../../configuration/hooks/post_authentication_hook.js';
                 const handler = await import(hookScript);
                 // TODO: run a for loop of all the rules here to enhance to id_token
-                handler.default(user, context, postAuthenticationConfiguration.configuration, async function (error, user, context) {
+                handler.default(user, context, globalHooksConfiguration.configuration, async function (error, user, context) {
                     //console.log(user);
                     if (user) {
                         const jwtOptions = {
@@ -263,7 +263,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 var hookScript = '../../configuration/hooks/post_authentication_hook.js';
                 const handler = await import(hookScript);
                 // TODO: run a for loop of all the rules here to enhance to id_token
-                handler.default(user, context, postAuthenticationConfiguration.configuration, async function (error, user, context) {
+                handler.default(user, context, globalHooksConfiguration.configuration, async function (error, user, context) {
                     if (user) {
                         const jwtOptions = {
                             algorithm: 'RS256', 
@@ -333,7 +333,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
               try {
                 var hookScript = '../../configuration/hooks/client_credentials_grant_hook.js';
                 const handler = await import(hookScript);
-                handler.default(clientFound, context, postAuthenticationConfiguration.configuration, async function (error, user, context) {
+                handler.default(clientFound, context, globalHooksConfiguration.configuration, async function (error, user, context) {
                     if (user) {
                         const jwtOptions = {
                             algorithm: 'RS256', 

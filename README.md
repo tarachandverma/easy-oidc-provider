@@ -47,38 +47,49 @@ Global Secondary Index (GSI) #2 name: client_name_index, attribute: client_name 
 (3) Update configuration
 
 ```bash
-# authentication script: required, needs to be implemented for user authentication
-configuration/authentication/authentication_script.js - implement authentication logic which can call your backend authentication API and return user object
-configuration/authentication/authentication_script_variables.json - configure variables to be passed in above script
-
-# hooks - javascript code to intercept variable phases of OIDC authentication flow
-a) post authenthentication hook : optional
-configuration/hooks/post_authentication_hook.js - implement your post authentication hook
-configuration/hooks/post_authentication_hook_configuration.json - configure variables to be passed in above script
-
-b) authorization code grant hook : optional
-configuration/hooks/authorization_code_grant_hook.js - intercept authorization code exchange and add/remove id_token claims
-configuration/hooks/authorization_code_grant_hook_configuration.json - configure variables to be passed in above script
-
-c) refresh token grant hook : optional
-configuration/hooks/refresh_token_grant_hook.js - intercept refresh_token grant and add/remove id_token claims
-configuration/hooks/refresh_token_grant_hook_configuration.json - configure variables to be passed in above script
-
-d) client credentials grant hook : optional
-configuration/hooks/client_credentials_grant_hook.js - intercept client_credentials token call and add/remove id_token claims
-configuration/hooks/client_credentials_grant_hook_configuration.json - configure variables to be passed in above script
-
-d) jwt bearer grant hook : optional
-configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bearer grant and add/remove id_token claims
-configuration/hooks/jwt_bearer_grant_hook_configuration.json - configure variables to be passed in above script
-
-e) Add dynamodb (which was created in above prerequisite) endpoints into configuration
+# global configuration
+path: ./configuration/global_config.json
+Add dynamodb (which was created in above prerequisite) endpoints into configuration
 configuration/global_config.json
 ie.  
     "dynamoDBConfiguration": {
         "endpoint": "ADD_DYNAMODB_ENDPOINT_HERE",
         "region": "AWS_REGION"
     }
+
+# authentication configuration: required, needs to be implemented for user authentication
+description: implement user authentication and return authenticated user
+required: yes
+path: ./configuration/authentication/authentication_script.js
+variables: ./configuration/authentication/authentication_script_variables.json - configure variables to be passed in above script
+
+# hooks configuration
+required: no, optional if 
+description: javascript code to intercept various OIDC phases
+
+a) hook configuration variables
+file path: ./configuration/hooks/global_hooks_configuration.json
+// add your variables in the below file which are shared in all the hooks
+{
+    "configuration" : {
+        "ADD-KEY-HERE":"ADD-VALUE-HERE"
+    }
+} 
+
+b) post authenthentication hook : optional
+script path: ./configuration/hooks/post_authentication_hook.js - implement your post authentication hook
+
+c) authorization code grant hook : optional
+script path: ./configuration/hooks/authorization_code_grant_hook.js - intercept authorization code exchange and add/remove id_token claims
+
+d) refresh token grant hook : optional
+script path: ./configuration/hooks/refresh_token_grant_hook.js - intercept refresh_token grant and add/remove id_token claims
+
+e) client credentials grant hook : optional
+script path: ./configuration/hooks/client_credentials_grant_hook.js - intercept client_credentials token call and add/remove id_token claims
+
+f) jwt bearer grant hook : optional
+script path: ./configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bearer grant and add/remove id_token claims
 ```
 
 # Run service with PM2

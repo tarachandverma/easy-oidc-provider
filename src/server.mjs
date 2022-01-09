@@ -1,5 +1,5 @@
 import authenticationScriptConfiguration from '../configuration/authentication/authentication_script_variables.json'
-import postAuthenticationConfiguration from '../configuration/hooks/post_authentication_hook_configuration.json'
+import globalHooksConfiguration from '../configuration/hooks/global_hooks_configuration.json'
 import globalConfiguration from '../configuration/global_config.json'
 import { readFileSync } from 'fs'
 import Authorize from './oidc/Authorize.js'
@@ -70,19 +70,19 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 app.use('/.well-known', WellKnownDiscoveryDocument({ globalConfiguration, cryptoKeys }));
 
 // authorize which validates client_id and other authentication request params
-app.use('/oauth2/authorize', Authorize({ docClient, globalConfiguration, cryptoKeys, postAuthenticationConfiguration }));
+app.use('/oauth2/authorize', Authorize({ docClient, globalConfiguration, cryptoKeys, globalHooksConfiguration }));
 
 // authorize which validates client_id and other authentication request params
-app.use('/login-page', LoginPage({ docClient, globalConfiguration, cryptoKeys, postAuthenticationConfiguration }));
+app.use('/login-page', LoginPage({ docClient, globalConfiguration, cryptoKeys, globalHooksConfiguration }));
 
 // authentication handler which executes login script
 app.use('/authenticate', Authenticate({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration }));
 
 // post auth handler where post_authentication_hook is executed
-app.use('/postauth/handler', PostAuthenticationHandler({ docClient, globalConfiguration, cryptoKeys, postAuthenticationConfiguration }));
+app.use('/postauth/handler', PostAuthenticationHandler({ docClient, globalConfiguration, cryptoKeys, globalHooksConfiguration }));
 
 // token API
-app.use('/oauth2/token', OAuthToken({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, postAuthenticationConfiguration }));
+app.use('/oauth2/token', OAuthToken({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, globalHooksConfiguration }));
 
 // UserInfo which validates client_id and other authentication request params
 app.use('/oauth2/userinfo', UserInfo({ globalConfiguration, cryptoKeys }));

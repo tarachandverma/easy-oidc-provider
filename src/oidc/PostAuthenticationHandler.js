@@ -5,7 +5,7 @@ const Router  =  require('express').Router;
 var jwt = require('jsonwebtoken')
 const AuthorizationCode = require('../models/AuthorizationCode')
 
-module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticationConfiguration }) => {
+module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfiguration }) => {
     let api = Router();
 
     api.post('/', async (req, res) => {
@@ -47,7 +47,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
             var hookScript = '../../configuration/hooks/post_authentication_hook.js';
             const handler = await import(hookScript);
             // TODO: run a for loop of all the rules here to enhance to id_token
-            handler.default(user, context, postAuthenticationConfiguration.configuration, function (error, user, context) {
+            handler.default(user, context, globalHooksConfiguration.configuration, function (error, user, context) {
                 if (user) {
                     var sessionId = uid.sync(40);
                     var session = new Session(sessionId, user.id);
