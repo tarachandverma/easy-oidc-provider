@@ -158,7 +158,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, postAuthenticati
             var queryParams = querystring.stringify(queryObject, "&", "=")
             
             res.writeHead(302, {
-              location: '/login?' + queryParams
+              location: '/login-page?' + queryParams
             });
             res.end();
         }

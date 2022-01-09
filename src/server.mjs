@@ -9,6 +9,7 @@ import Authenticate from './oidc/Authenticate.js';
 import PostAuthenticationHandler from './oidc/PostAuthenticationHandler.js';
 import OAuthToken from './oidc/OAuthToken.js';
 import WellKnownDiscoveryDocument from './oidc/WellKnownDiscoveryDocument.js'
+import LoginPage from './oidc/LoginPage.js'
 import UserInfo from './oidc/UserInfo.js'
 import APIs from './api/APIs.js';
 import cookieParser from 'cookie-parser';
@@ -70,6 +71,9 @@ app.use('/.well-known', WellKnownDiscoveryDocument({ globalConfiguration, crypto
 
 // authorize which validates client_id and other authentication request params
 app.use('/oauth2/authorize', Authorize({ docClient, globalConfiguration, cryptoKeys, postAuthenticationConfiguration }));
+
+// authorize which validates client_id and other authentication request params
+app.use('/login-page', LoginPage({ docClient, globalConfiguration, cryptoKeys, postAuthenticationConfiguration }));
 
 // authentication handler which executes login script
 app.use('/authenticate', Authenticate({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration }));
