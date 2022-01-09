@@ -7,7 +7,7 @@ const url = require('url');
 var setCookie = require('set-cookie-parser');
 const crypto = require("crypto");
 
-const app = 'http://localhost:8090';
+const app = 'http://localhost:8080';
 
 // read global configuration
 const fs = require('fs');

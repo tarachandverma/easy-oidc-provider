@@ -5,42 +5,8 @@ OpenID Connect Provider implementation, configure your OpenID-Connect Provider i
 (1) Generate RSA keypair for JWT signing
 
 ```bash
-Generate a private key, and store it in a file called private.pem
-cd signing-keys-and-certs
-openssl genrsa -des3 -passout pass:SomePassword -out private.pass.pem 2048
-openssl rsa -passin pass:SomePassword -in private.pass.pem -out private.pem
-
-Note: You can delete the private.pass.pem file because you no longer need it.
-rm -rf private.pass.pem
-
-# generate self-signed certificate signing request
-openssl req -new -key private.pem -out server.csr
-
-Country Name=US
-State=YOUR_STATE
-City=YOUR_CITY
-Company=YOUR_COMPANY
-Organizational Unit Name=SKIP
-Common Nmae=op.example.org
-Email Address: YOUR_EMAIL_ADDRESS@example.com
-A challenge password=WHATEVER_YOU_WANT
-
-# generate self-signed certificate valid for 10 years
-openssl x509 -req -sha256 -days 3650 -in server.csr -signkey private.pem -out server.crt
-
-# generate public key from above certificate
-openssl x509 -in server.crt -pubkey -out public.pem
-
-# calculate finger print
-openssl x509 -in public.pem -noout -fingerprint
-
-#generate public key (required form JWK generation )
-openssl rsa -in private.pem -out public.pem -pubout
-
-# convert PEM to JWK
-visit https://8gwifi.org/jwkconvertfunctions.jsp or https://irrte.ch/jwt-js-decode/pem2jwk.html 
-and select "PEM-to-JWK (RSA Only)" and paste above public key (public.pem) in Input
-and hit submit, you'll see JWK formatted public key
+#Generates a private key, public key, JWK and stores into "signing-keys-and-certs" directory
+./generate_signing_keys_and_certs.sh
 ```
 
 (2) Setup dynamodb and add tables
@@ -81,29 +47,29 @@ Global Secondary Index (GSI) #2 name: client_name_index, attribute: client_name 
 (3) Update configuration
 
 ```bash
-# authentication script
-configuration/authentication/authentication_script.js - implement your authentication call
+# authentication script: required, needs to be implemented for user authentication
+configuration/authentication/authentication_script.js - implement authentication logic which can call your backend authentication API and return user object
 configuration/authentication/authentication_script_variables.json - configure variables to be passed in above script
 
 # hooks - javascript code to intercept variable phases of OIDC authentication flow
-a) post authenthentication hook
-configuration/hooks/post_authentication_hook.js - implement your authentication call
+a) post authenthentication hook : optional
+configuration/hooks/post_authentication_hook.js - implement your post authentication hook
 configuration/hooks/post_authentication_hook_configuration.json - configure variables to be passed in above script
 
-b) authorization code grant hook
-configuration/hooks/post_authentication_hook.js - implement your authentication call
-configuration/hooks/post_authentication_hook_configuration.json - configure variables to be passed in above script
+b) authorization code grant hook : optional
+configuration/hooks/authorization_code_grant_hook.js - intercept authorization code exchange and add/remove id_token claims
+configuration/hooks/authorization_code_grant_hook_configuration.json - configure variables to be passed in above script
 
-c) refresh token grant hook
-configuration/hooks/refresh_token_grant_hook.js - implement your authentication call
+c) refresh token grant hook : optional
+configuration/hooks/refresh_token_grant_hook.js - intercept refresh_token grant and add/remove id_token claims
 configuration/hooks/refresh_token_grant_hook_configuration.json - configure variables to be passed in above script
 
-d) client credentials grant hook
-configuration/hooks/client_credentials_grant_hook.js - implement your authentication call
+d) client credentials grant hook : optional
+configuration/hooks/client_credentials_grant_hook.js - intercept client_credentials token call and add/remove id_token claims
 configuration/hooks/client_credentials_grant_hook_configuration.json - configure variables to be passed in above script
 
-d) jwt bearer grant hook
-configuration/hooks/jwt_bearer_grant_hook.js - implement your authentication call
+d) jwt bearer grant hook : optional
+configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bearer grant and add/remove id_token claims
 configuration/hooks/jwt_bearer_grant_hook_configuration.json - configure variables to be passed in above script
 
 e) Add dynamodb (which was created in above prerequisite) endpoints into configuration
@@ -132,15 +98,16 @@ node --experimental-modules --experimental-json-modules src/server.mjs
 # OAuth2/OIDC endpoints
 
 ```bash
-Authorization endpoint --> http://localhost:8090/oauth2/authorize
-Token endpoint --> http://localhost:8090/oauth2/token
-Wellknown endpoint --> http://localhost:8090/.well-known/openid-configuration
+Authorization endpoint --> http://localhost:8080/oauth2/authorize
+Token endpoint --> http://localhost:8080/oauth2/token
+Wellknown endpoint --> http://localhost:8080/.well-known/openid-configuration
+UserInfo endpoint --> http://localhost:8080/oauth2/userinfo
 ```
 
 # Client registration APIs to create new client_id/client_secret
 
 ```bash
-Swagger document - http://localhost:8090/api-docs/#/
+Swagger document - http://localhost:8080/api-docs/#/
 Create client   --> POST /api/clients
 Get client      -->    GET /api/clients/{id}
 Get all clients -->    GET /api/clients

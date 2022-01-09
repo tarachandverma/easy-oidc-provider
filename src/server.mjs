@@ -12,7 +12,7 @@ import WellKnownDiscoveryDocument from './oidc/WellKnownDiscoveryDocument.js'
 import UserInfo from './oidc/UserInfo.js'
 import APIs from './api/APIs.js';
 import cookieParser from 'cookie-parser';
-import jwksJson from '../signing-keys-and-certs/jwks.json';
+import jwkJson from '../signing-keys-and-certs/private_jwk.json';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './swagger.json';
 
@@ -27,10 +27,21 @@ var privateKey = readFileSync('./signing-keys-and-certs/private.pem');
 var publicKey = readFileSync('./signing-keys-and-certs/public.pem');
 
 // TODO: all of these keys must come from Vault per environment. PROD should not share any keys
+// this keyId needs to be common between all instances
+const keyId = "9cc7d52d-8b42-4a72-85bb-a38f72450669"
 var cryptoKeys = {
     privateKey: privateKey,
     publicKey: publicKey,
-    jwksJson: jwksJson,
+    jwksJson: {
+        "keys": [
+            {
+                "kid": keyId,
+                "kty": jwkJson.kty,
+                "n": jwkJson.n,
+                "e": jwkJson.e
+            }
+        ] 
+    },
     stateEncryptionKey: globalConfiguration.stateEncryptionKey,
     codeEncryptionKey: globalConfiguration.codeEncryptionKey,
     JWT_EXPIRY_SECONDS: globalConfiguration.jwtExpirySeconds
@@ -83,4 +94,4 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: "OK" });
 });
     
-app.listen(8090, () => console.log('OpenID-Connect server listening on port 8090!'))
+app.listen(8080, () => console.log('OpenID-Connect server listening on port 8080!'))
