@@ -1,6 +1,6 @@
 {
-    "stateEncryptionKey": "p82Mqf1L9vQ4Jng3u8cACK4qSRDSf8HL",
-    "codeEncryptionKey": "q82Mqf1L9vQ4Jng3u8cACK4qSRDSf8HM",
+    "stateEncryptionKey": "STATE_ENCRYPTION_KEY",
+    "codeEncryptionKey": "CODE_ENCRYPTION_KEY",
     "jwtExpirySeconds": 432000,        
     "wellKnownConfiguration": {
         "host": "op.example.org",
@@ -53,7 +53,7 @@
         "clientCredential": "oidc-client-credentials"
     },
     "clientAPICredentials": {
-        "client_id": "ADD_MASTER_CLIENT_ID_HERE_42_CHAR_LONG_ALPHA_NUMERIC",
-        "client_secret": "ADD_MASTER_CLIENT_ID_HERE_84_CHAR_LONG_ALPHA_NUMERIC"
+        "client_id": "CLIENT_CRUD_API_CLIENT_ID",
+        "client_secret": "CLIENT_CRUD_API_CLIENT_SECRET"
     }                   
 }
