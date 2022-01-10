@@ -53,7 +53,7 @@
         "clientCredential": "oidc-client-credentials"
     },
     "clientAPICredentials": {
-        "client_id": "koAxwd0hY9wmxrrotTdkLtA21B7JRCCMa59QwGQu",
-        "client_secret": "boFFSksZImf0Pel8Bo_WLNMwdIRYutZPpDvvd7EdIGexip0JuJ7CQVnbVgGglf2ECqz77Cmvb6jDFs9QWjpPLw"
+        "client_id": "ADD_MASTER_CLIENT_ID_HERE_42_CHAR_LONG_ALPHA_NUMERIC",
+        "client_secret": "ADD_MASTER_CLIENT_ID_HERE_84_CHAR_LONG_ALPHA_NUMERIC"
     }                   
 }

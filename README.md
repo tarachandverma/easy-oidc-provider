@@ -1,4 +1,4 @@
-# easy-oidc-provider - nodejs Easy to setup OpenID Connect Provider
+# easy-oidc-provider - easy to setup OpenID Connect Provider
 OpenID Connect Provider implementation, configure your OpenID-Connect Provider in few minutes
 
 # Prerequisites
@@ -92,6 +92,24 @@ f) jwt bearer grant hook : optional
 script path: ./configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bearer grant and add/remove id_token claims
 ```
 
+(4) Update Login page as necessary
+
+```bash
+# login page
+path: ./configuration/login-page/login.html
+```
+
+(5) Generate master client_id, client_secret to call client credentials CRUD APIs
+
+```bash
+# open global_config.json in editorand generate client_id and client_secret and add here
+# ./configuration/global_config.json
+    "clientAPICredentials": {
+        "client_id": "ADD_MASTER_CLIENT_ID_HERE_42_CHAR_LONG_ALPHA_NUMERIC",
+        "client_secret": "ADD_MASTER_CLIENT_ID_HERE_84_CHAR_LONG_ALPHA_NUMERIC"
+    } 
+```
+
 # Run service with PM2
 
 ```bash
@@ -115,11 +133,48 @@ Wellknown endpoint --> http://localhost:8080/.well-known/openid-configuration
 UserInfo endpoint --> http://localhost:8080/oauth2/userinfo
 ```
 
+# OAuth2/OIDC flow
+
+```bash
+RP 
+302 --> http://localhost:8080/oauth2/authorize?scope=SCOPE&client_id=CLIENT_ID&response_type=RESPONSE_TYPE&redirect_uri=RP_CALLBACK_URL&nonce=RP_GENERATED_NONCE&state=RP_GENERATED_STATE
+302 --> http://localhost:8080/login-page?scope=SCOPE&client_id=CLIENT_ID&response_type=RESPONSE_TYPE&redirect_uri=RP_CALLBACK_URL&nonce=RP_GENERATED_NONCE&state=OP_STATE
+[user submits username and password ]
+--> POST: http://localhost:8080/authenticate
+[username=&password=&scope=client_id=&response_type=&redirect_uri=&nonce=&state=]
+--> POST: http://localhost:8080/postauth/handler
+302 --> RP_CALLBACK_URL?code=&state=
+...
+GET RP_CALLBACK_URL?code=&state=
+[POST: http://localhost:8080/oauth2/token
+ body: code=&redirect_uri=&client_id=&client_secret=
+ retrieve id_token
+ RP consumes id_token as necesary
+]
+```
+
 # Client registration APIs to create new client_id/client_secret
 
 ```bash
+# get master client_id and client_secret from step#5 of prerequisites from
+./configuration/global_config.json
+    
+# Generate access token
+curl --request POST \
+  --url 'https://localhost:8080/oauth2/token' \
+  --header 'content-type: application/x-www-form-urlencoded' \
+  --data 'grant_type=client_credentials&client_id=MASTER_CLIENT_ID&client_secret=MASTER_CLIENT_SECRET&scope=create:client read:client update:client delete:client'
+# response
+{
+    access_token=API_ACCESS_TOKEN
+}  
+ 
+```
+
+```bash
 Swagger document - http://localhost:8080/api-docs/#/
-Create client   --> POST /api/clients
+# use above swagger url with above API_ACCESS_TOKEN to create new client credentials
+Create client   -->    POST /api/clients
 Get client      -->    GET /api/clients/{id}
 Get all clients -->    GET /api/clients
 Update client   -->    PATCH /api/clients/{id}
