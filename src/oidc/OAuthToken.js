@@ -29,63 +29,43 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         
         var issuer = utils.getCurrentIssuer(req.hostname);
                 
-        if ( context.grant_type === 'authorization_code' || context.grant_type === 'refresh_token'  ) { // authorization code grant
+        if ( context.grant_type === 'authorization_code') { // authorization code grant
             const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
             if (clientData ==null || clientData.Item ==null){
                 return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
-            }        
-            if (context.grant_type === 'authorization_code') {
-                // validate redirect_uri
-                if (req.body.redirect_uri == null) {
-                    return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is missing'});
-                }
-                if (clientData.Item.callback_urls == null || !clientData.Item.callback_urls.includes(req.body.redirect_uri)){
-                    return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is not allowed'});
-                }
-
-                // validate client_secret
-                if (req.body.client_secret == null) {
-                    return res.status(400).send({error: 'invalid_request', error_description: 'client_secret is missing'});
-                }
-                if (clientData.Item.client_secret == null || req.body.client_secret !== clientData.Item.client_secret){
-                    return res.status(400).send({error: 'invalid_request', error_description: 'client_secret mismatch'});
-                }
-                                        
-                // TODO: validate required parameters as per the spec
-                var code = req.body.code;
-                // get from the dynamodb
-                const get_code_params = {
-                  TableName : globalConfiguration.dynamoDBTablesNames.authorizationCode,
-                    Key:{
-                        "code": code
-                    }          
-                }            
-                const codeData = await docClient.get(get_code_params).promise();
-                //console.log(codeData);
-                context.scope = codeData.Item.scope;
-                context.nonce = codeData.Item.nonce;
-                context.client_id = codeData.Item.client_id;
-                context.session_id =  codeData.Item.session_id;
-            } else {
-                 // TODO: validate required parameters as per the spec        
-                var token = req.body.refresh_token;
-                // get from the dynamodb
-                const get_refreshtoken_params = {
-                  TableName : globalConfiguration.dynamoDBTablesNames.refreshToken,
-                    Key:{
-                        "token": token
-                    }          
-                }
-                const refreshTokenData = await docClient.get(get_refreshtoken_params).promise();
-                if (refreshTokenData==null || refreshTokenData.Item==null || refreshTokenData.Item.subject == null){
-                    return res.status(400).send({error: 'invalid_request', error_description: 'refresh_token is invalid'});
-                }                
-                //console.log(refreshTokenData);
-                context.scope = refreshTokenData.Item.scope || 'openid given_name family_name email';
-                context.nonce = refreshTokenData.Item.nonce;
-                context.client_id = refreshTokenData.Item.client_id;
-                context.session_id =  refreshTokenData.Item.session_id;               
             }
+                    
+            // validate redirect_uri
+            if (req.body.redirect_uri == null) {
+                return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is missing'});
+            }
+            if (clientData.Item.callback_urls == null || !clientData.Item.callback_urls.includes(req.body.redirect_uri)){
+                return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is not allowed'});
+            }
+
+            // validate client_secret
+            if (req.body.client_secret == null) {
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_secret is missing'});
+            }
+            if (clientData.Item.client_secret == null || req.body.client_secret !== clientData.Item.client_secret){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_secret mismatch'});
+            }
+                                    
+            // TODO: validate required parameters as per the spec
+            var code = req.body.code;
+            // get from the dynamodb
+            const get_code_params = {
+              TableName : globalConfiguration.dynamoDBTablesNames.authorizationCode,
+                Key:{
+                    "code": code
+                }          
+            }            
+            const codeData = await docClient.get(get_code_params).promise();
+            //console.log(codeData);
+            context.scope = codeData.Item.scope;
+            context.nonce = codeData.Item.nonce;
+            context.client_id = codeData.Item.client_id;
+            context.session_id =  codeData.Item.session_id;
             
             const get_session_params = {
               TableName : globalConfiguration.dynamoDBTablesNames.ssoSession,
@@ -120,7 +100,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             id_token: id_token,
                             access_token: access_token
                         }
-                        if(context.grant_type==='authorization_code' && context.scope.includes('offline_access')) {
+                        if(context.scope.includes('offline_access')) {
                             var token = uid.sync(40);
                             var refreshToken = new RefreshToken(token, sessionData.Item.id, context.client_id, user.id, context.scope, context.nonce);                            
                             // store refreshToken in the database
@@ -133,6 +113,83 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             //console.log(result);
                             // TODO: add error handling
                             response.refresh_token = token;
+                        }
+                        return res.status(200).send(response);
+                    } else if (error) {
+                        return res.status(401).send(error);
+                    } else {
+                        var error = { 
+                            errors: [
+                                {status: "500", code: "INVALID_RESPONSE", title: "Internal Server Error"}
+                            ]
+                        }
+                        return res.status(500).send(error);
+                    }
+                });
+              } catch(err) {
+                var error = { 
+                    errors: [
+                        {status: "500", code: err.code, title: "Internal Server Error", detail: err.message}
+                    ]
+                }           
+                return res.status(500).send(error);
+              }     
+        } else if ( context.grant_type === 'refresh_token'  ) { // authorization code grant
+            const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
+            if (clientData ==null || clientData.Item ==null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+            }
+                    
+            var token = req.body.refresh_token;
+            // get from the dynamodb
+            const get_refreshtoken_params = {
+              TableName : globalConfiguration.dynamoDBTablesNames.refreshToken,
+                Key:{
+                    "token": token
+                }          
+            }
+            const refreshTokenData = await docClient.get(get_refreshtoken_params).promise();
+            if (refreshTokenData==null || refreshTokenData.Item==null || refreshTokenData.Item.subject == null){
+                return res.status(400).send({error: 'invalid_request', error_description: 'refresh_token is invalid'});
+            }                
+            //console.log(refreshTokenData);
+            context.scope = refreshTokenData.Item.scope || 'openid given_name family_name email';
+            context.nonce = refreshTokenData.Item.nonce;
+            context.client_id = refreshTokenData.Item.client_id;
+            context.session_id =  refreshTokenData.Item.session_id;               
+        
+            const get_session_params = {
+              TableName : globalConfiguration.dynamoDBTablesNames.ssoSession,
+                Key:{
+                    "id": context.session_id
+                }          
+            }        
+            const sessionData = await docClient.get(get_session_params).promise();
+            //console.log(sessionData);
+            
+            var user = sessionData.Item.user;
+              try {
+                var hookScript = '../../configuration/hooks/refresh_token_grant_hook.js';
+                const handler = await import(hookScript);
+                // TODO: run a for loop of all the rules here to enhance to id_token
+                handler.default(user, context, globalHooksConfiguration.configuration, async function (error, user, context) {
+                    //console.log(user);
+                    if (user) {
+                        const jwtOptions = {
+                            algorithm: 'RS256', 
+                            keyid: cryptoKeys.jwksJson.keys[0].kid, 
+                            audience: client_id, 
+                            issuer: issuer, 
+                            expiresIn: cryptoKeys.JWT_EXPIRY_SECONDS
+                        }                        
+                        var claims = utils.getIdTokenClaims(user.id, user, context.scope, context.nonce);
+                        var id_token = jwt.sign(claims, cryptoKeys.privateKey, jwtOptions);
+                        var access_token = jwt.sign({sub: user.id}, cryptoKeys.privateKey, jwtOptions);
+                        var response = {
+                            token_type: 'Bearer',
+                            expires_in: cryptoKeys.JWT_EXPIRY_SECONDS,
+                            id_token: id_token,
+                            access_token: access_token
                         }
                         return res.status(200).send(response);
                     } else if (error) {
@@ -260,7 +317,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             }
                     
               try {
-                var hookScript = '../../configuration/hooks/post_authentication_hook.js';
+                var hookScript = '../../configuration/hooks/jwt_bearer_grant_hook.js';
                 const handler = await import(hookScript);
                 // TODO: run a for loop of all the rules here to enhance to id_token
                 handler.default(user, context, globalHooksConfiguration.configuration, async function (error, user, context) {

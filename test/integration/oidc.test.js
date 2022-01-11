@@ -94,7 +94,8 @@ describe('OIDC API', () => {
             .expect(200, done);
     });
     
-    // authorization code grant: call /oauth2/authorize    
+    // authorization code grant: call /oauth2/authorize
+    var OP_STATE = null;    
     it('returns 302 to login on authorize code grant API /oauth2/authorize with valid client_id when user not logged-in', (done) => {
         request(app)
             .get('/oauth2/authorize?scope=openid+email+given_name+family_name&client_id='+CLIEND_ID+'&response_type=code&redirect_uri='+REDIRECT_URI+'&state=https%3A%2F%2Fclient.example.com%2F&nonce=44b888fc-74da-490e-93c2-f4e29779f5d8')
@@ -102,14 +103,19 @@ describe('OIDC API', () => {
             .expect(function(res) {
               console.log(res.header.location);
               res.header.location.should.not.empty();
+              // parse location
+              const queryObject = url.parse(res.header.location,true).query;
+              console.log(queryObject)
+              OP_STATE = queryObject.state
             })            
             .expect(302, done);
     });
 
     // login page calling /authenticate API which should returns auto-post HTML which can be POST'ed to /postauth/handler
-    var userToken = null;
+    var userToken1 = null;
+    var context1 = null;
     it('returns 200 on authenticate API /authenticate when submitted with valid username and password', (done) => {
-        var post_body = '{"client_id":"'+CLIEND_ID+'","redirect_uri":"'+REDIRECT_URI+'","response_type":"code","headers":{"X-REMOTE-USER":"johndoe"},"username":"johndoe","password":"mypassword","scope":"openid email given_name family_name offline_access","state":"hKFo2SBhN0xkc19WUG9DWnB0blRfb0lCRFhDc0RMY3JvbGV4TqFupWxvZ2luo3RpZNkgcGJMTjlUdHZHT3h0MHl3UkdFTlVpNTFOWkUycXBmUmSjY2lk2SA1aHNzRUFkTXkwbUpUSUNuSk52QzlUWEV3M1ZhN2pmTw","protocol":"oauth2","nonce":"44b888fc-74da-490e-93c2-f4e29779f5d8","_csrf":"4Tz328WZ-O38twSEL9bhn9wwQ7x4oIiSwRwc"}';
+        var post_body = '{"client_id":"'+CLIEND_ID+'","redirect_uri":"'+REDIRECT_URI+'","response_type":"id_token","headers":{"X-REMOTE-USER":"johndoe"},"username":"johndoe","password":"mypassword","scope":"openid email given_name family_name offline_access","state":"'+OP_STATE+'","protocol":"oauth2","nonce":"44b888fc-74da-490e-93c2-f4e29779f5d8","_csrf":"4Tz328WZ-O38twSEL9bhn9wwQ7x4oIiSwRwc"}';
         request(app)
             .post('/authenticate')
             .set('Content-Type', 'application/json')
@@ -120,19 +126,19 @@ describe('OIDC API', () => {
                 const htmlHandler = cheerio.load(res.text)
                 console.log("UserToken:", htmlHandler("form input[name='token']").attr("value"))
                 console.log("Context:", htmlHandler("form input[name='ctx']").attr("value")) 
-                userToken = htmlHandler("form input[name='token']").attr("value");
+                userToken1 = htmlHandler("form input[name='token']").attr("value");
+                context1 = htmlHandler("form input[name='ctx']").attr("value");
             })                                 
             .expect(200, done);
     });
     
     // implicit grant: /postauth/handler should write sso session in browser as well returns to callback url with authorization code
     it('returns 302 with id_token on post authentication handler API /postauth/handler when submitted with valid token and context', (done) => {
-        var context = '%7B%22response_type%22%3A%22id_token%22%2C%22client_id%22%3A%22'+CLIEND_ID+'%22%2C%22redirect_uri%22%3A%22http%3A//localhost/callback%22%2C%22state%22%3A%2203a09cdc7949a9e2.b61ea4931449b820f1d45c0cbe8760b608b45bb0f8f5645c7204be8e60b711c2%22%2C%22scope%22%3A%22openid+email+given_name+family_name%22%2C%22nonce%22%3A%2244b888fc-74da-490e-93c2-f4e29779f5d8%22%7D';
         request(app)
             .post('/postauth/handler')
             .set('Content-Type', 'application/x-www-form-urlencoded')
             .set('Host', "op.example.org")               
-            .send('token=' + userToken + '&ctx=' + context)
+            .send('token=' + userToken1 + '&ctx=' + context1)
             .expect(function(res) {
                 console.log(res.body)
                 console.log(res.header.location);
@@ -141,16 +147,36 @@ describe('OIDC API', () => {
             .expect(302, done);
     });
     
+    // authorization code flow
+    var userToken2 = null;
+    var context2 = null;
+    it('returns 200 on authenticate API /authenticate when submitted with valid username and password', (done) => {
+        var post_body = '{"client_id":"'+CLIEND_ID+'","redirect_uri":"'+REDIRECT_URI+'","response_type":"code","headers":{"X-REMOTE-USER":"johndoe"},"username":"johndoe","password":"mypassword","scope":"openid email given_name family_name offline_access","state":"'+OP_STATE+'","protocol":"oauth2","nonce":"44b888fc-74da-490e-93c2-f4e29779f5d8","_csrf":"4Tz328WZ-O38twSEL9bhn9wwQ7x4oIiSwRwc"}';
+        request(app)
+            .post('/authenticate')
+            .set('Content-Type', 'application/json')
+            .set('Host', "op.example.org")               
+            .send(post_body)
+            .expect(function(res) {
+                console.log(res.text)
+                const htmlHandler = cheerio.load(res.text)
+                console.log("UserToken:", htmlHandler("form input[name='token']").attr("value"))
+                console.log("Context:", htmlHandler("form input[name='ctx']").attr("value")) 
+                userToken2 = htmlHandler("form input[name='token']").attr("value");
+                context2 = htmlHandler("form input[name='ctx']").attr("value");
+            })                                 
+            .expect(200, done);
+    });
+        
     // /postauth/handler writes sso-session to browser and authorization code appended to callback url 
     var authorizationCode = null;
     var ssoSession=null;
     it('returns 302 with code on post authentication handler API /postauth/handler when submitted with valid token and context', (done) => {
-        var context = '%7B%22response_type%22%3A%22authorization_code%22%2C%22client_id%22%3A%22'+CLIEND_ID+'%22%2C%22redirect_uri%22%3A%22http%3A//localhost/callback%22%2C%22state%22%3A%2203a09cdc7949a9e2.b61ea4931449b820f1d45c0cbe8760b608b45bb0f8f5645c7204be8e60b711c2%22%2C%22scope%22%3A%22openid+email+given_name+family_name+offline_access%22%2C%22nonce%22%3A%2244b888fc-74da-490e-93c2-f4e29779f5d8%22%7D';
         request(app)
             .post('/postauth/handler')
             .set('Content-Type', 'application/x-www-form-urlencoded')
             .set('Host', "op.example.org")               
-            .send('token=' + userToken + '&ctx=' + context)
+            .send('token=' + userToken2 + '&ctx=' + context2)
             .expect(function(res) {
               console.log(res.header.location);
               res.header.location.should.not.empty();
@@ -271,6 +297,6 @@ describe('OIDC API', () => {
                 res.body.should.have.property('access_token');
             })
             .expect(200, done);
-    });    
+    });   
     
 });
