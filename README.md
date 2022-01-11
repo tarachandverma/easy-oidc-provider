@@ -145,6 +145,22 @@ script path: ./configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bear
 path: ./configuration/login-page/login.html
 ```
 
+(10) Configure allowd API scopes (optional)
+
+```bash
+# global configuration
+path: ./configuration/global_config.json
+Add API scopes here, it will be passed in access_token(JWT) scope claims
+ie.  
+    "wellKnownConfiguration": {
+        ...
+        "scopes_supported": [
+            ...
+            "api:ADD_API_SCOPE_HERE",
+            "api:ADD_ANOTHER_API_SCOPE_HERE"
+        ],
+```
+
 # Run service with PM2
 
 ```bash

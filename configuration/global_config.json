@@ -11,7 +11,9 @@
             "given_name",
             "family_name",
             "email",
-            "email_verified"
+            "email_verified",
+            "api:ADD_API_SCOPE_HERE",
+            "api:ADD_ANOTHER_API_SCOPE_HERE"
         ],
         "grant_types_supported": [
             "authorization_code",
