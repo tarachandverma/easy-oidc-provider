@@ -51,7 +51,10 @@ openssl req -subj '/C=US/ST=YOUR_STATE/L=YOUR_CITY/O=YOUR_COMPANY/CN=YOUR_OP_HOS
 (5) Setup dynamodb and add tables (required)
 
 ```bash
-# create dynamodb in AWS and
+# create dynamodb in AWS
+Note: for local testing, run dynamodb locally by follow the steps described in 
+./dynamodb-local/readme.txt
+
 # create following tables in dynamodb
 Table #1 - Authorization codes
 Purpose: store authorization code
@@ -95,6 +98,12 @@ ie.
         "endpoint": "ADD_DYNAMODB_ENDPOINT_HERE",
         "region": "AWS_REGION"
     }
+Note: for local testing
+Use
+    "dynamoDBConfiguration": {
+        "endpoint": "http://localhost:8000",
+        "region": "us-west-2"
+    }    
 ```
 
 (7) Configure authentication script (required)
@@ -145,22 +154,6 @@ script path: ./configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bear
 path: ./configuration/login-page/login.html
 ```
 
-(10) Configure allowd API scopes (optional)
-
-```bash
-# global configuration
-path: ./configuration/global_config.json
-Add API scopes here, it will be passed in access_token(JWT) scope claims
-ie.  
-    "wellKnownConfiguration": {
-        ...
-        "scopes_supported": [
-            ...
-            "api:ADD_API_SCOPE_HERE",
-            "api:ADD_ANOTHER_API_SCOPE_HERE"
-        ],
-```
-
 # Run service with PM2
 
 ```bash
@@ -184,24 +177,53 @@ Wellknown endpoint --> /.well-known/openid-configuration
 UserInfo endpoint --> /oauth2/userinfo
 ```
 
-# OAuth2/OIDC flow
+# Authorization code flow
 
 ```bash
 RP 
-302 --> https://op.example.org/oauth2/authorize?scope=SCOPE&client_id=CLIENT_ID&response_type=RESPONSE_TYPE&redirect_uri=RP_CALLBACK_URL&nonce=RP_GENERATED_NONCE&state=RP_GENERATED_STATE
-302 --> https://op.example.org/login-page?scope=SCOPE&client_id=CLIENT_ID&response_type=RESPONSE_TYPE&redirect_uri=RP_CALLBACK_URL&nonce=RP_GENERATED_NONCE&state=OP_STATE
+302 --> http://localhost:8080/oauth2/authorize?scope=SCOPE&client_id=CLIENT_ID&response_type=RESPONSE_TYPE&redirect_uri=RP_CALLBACK_URL&nonce=RP_GENERATED_NONCE&state=RP_GENERATED_STATE
+302 --> http://localhost:8080/login-page?scope=SCOPE&client_id=CLIENT_ID&response_type=RESPONSE_TYPE&redirect_uri=RP_CALLBACK_URL&nonce=RP_GENERATED_NONCE&state=OP_STATE
 [user submits username and password ]
---> POST: https://op.example.org/authenticate
+--> POST: http://localhost:8080/authenticate
 [username=&password=&scope=client_id=&response_type=&redirect_uri=&nonce=&state=]
---> POST: https://op.example.org/postauth/handler
+--> POST: http://localhost:8080/postauth/handler
 302 --> RP_CALLBACK_URL?code=&state=
 ...
 GET RP_CALLBACK_URL?code=&state=
-[POST: https://op.example.org/oauth2/token
+[POST: http://localhost:8080/oauth2/token
  body: code=&redirect_uri=&client_id=&client_secret=
  retrieve id_token
  RP consumes id_token as necesary
 ]
+```
+
+# Client Credentials flow
+
+```bash
+POST /oauth2/token      //Line breaks for clarity
+Host: localhost:8080
+Content-Type: application/x-www-form-urlencoded
+
+client_id=CLIENT_ID
+&client_secret=CLIENT_SECRET
+&grant_type=client_credentials
+&scope=SCOPE_SUPPORTED // scopes created during client registration
+
+// response
+{
+  "token_type": "Bearer",
+  "expires_in": 3599,
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik1uQ19WWmNBVGZNNXBP..."
+}
+
+decoded access_token's claim would look like this
+{
+  "scope": "api:myapi",
+  "iat": 1641919169,
+  "exp": 1642351169,
+  "aud": "qT2WlR3bDhhGc8THQP0EXMyWSWR56S5Vwkqk9FjG",
+  "iss": "https://localhost:8080/"
+}
 ```
 
 # Client registration APIs to create new client_id/client_secret
