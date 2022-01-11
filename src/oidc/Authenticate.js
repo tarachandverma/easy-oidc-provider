@@ -15,8 +15,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         var state = req.body.state || ''
         var nonce = req.body.nonce || ''
         //console.log(req.body);
-        var issuer = utils.getCurrentIssuer(req.hostname);
-
+        var issuer = "https://" + globalConfiguration.wellKnownConfiguration.host + "/";
+        const OP_HOST = globalConfiguration.wellKnownConfiguration.host;
         // validate client_id
         if (req.body.client_id == null){
             return res.status(400).send({error: 'invalid_request', error_description: 'client_id is missing'});
@@ -52,7 +52,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                         }
                         var contextSerial = encodeURIComponent(JSON.stringify(context));
                         var response = 
-                            '<form method="post" name="hiddenform" action="https://op.example.org/postauth/handler">' +
+                            `<form method="post" name="hiddenform" action="https://${OP_HOST}/postauth/handler">` +
                             `<input type="hidden" name="token" value="${token}">` + 
                             `<input type="hidden" name="ctx" value="${contextSerial}">` +
                             '<noscript>\

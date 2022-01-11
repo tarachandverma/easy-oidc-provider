@@ -42,7 +42,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
         if (requestContext.state) {
             originalState = utils.decryptPayload(requestContext.state, cryptoKeys.stateEncryptionKey)
         }
-        var issuer = utils.getCurrentIssuer(req.hostname);
+        var issuer = "https://" + globalConfiguration.wellKnownConfiguration.host + "/";
           try {
             var hookScript = '../../configuration/hooks/post_authentication_hook.js';
             const handler = await import(hookScript);

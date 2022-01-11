@@ -71,15 +71,6 @@ function getIdTokenClaims(subject, user, scope, nonce) {
     return claims;
 }
 
-// TODO: add request host header to issuer mapping here 
-const VALID_HOSTNAME_ISSUERS_MAPPING = {
-    'op.example.org' : 'https://op.example.org/',
-}
-
-function getCurrentIssuer(requestHost) {
-    return VALID_HOSTNAME_ISSUERS_MAPPING[requestHost];
-}
-
 async function getClientCredentials(docClient, globalConfiguration, client_id) {
     var clientData = null;
     // retrieve client credentials from cache
@@ -108,7 +99,6 @@ module.exports = {
   decryptPayload: decryptPayload,
   encryptPayload: encryptPayload,
   getIdTokenClaims: getIdTokenClaims,
-  getCurrentIssuer: getCurrentIssuer,
   getClientCredentials: getClientCredentials  
 };
 

@@ -1,15 +1,30 @@
 # easy-oidc-provider - easy to setup OpenID Connect Provider
-OpenID Connect Provider implementation, configure your OpenID-Connect Provider in few minutes
+OpenID Connect Provider implementation, configure your OpenID-Connect Provider in less than an hour
 
 # Prerequisites
-(1) Generate RSA keypair for JWT signing (required)
+
+(1) Choose OpenID-Connect Provider domain
+
+```bash
+(a) open global_config.json in editor and set YOUR_OP_HOST_DOMAIN as you openID-Connect provider domain i.e. op.example.org
+# ./configuration/global_config.json
+    "wellKnownConfiguration": {
+        "host": "YOUR_OP_HOST_DOMAIN"
+        ...
+    }
+(b) open generate_signing_keys_and_certs.sh in editor and set certificate YOUR_STATE, YOUR_CITY, YOUR_COMPANY and YOUR_OP_HOST_DOMAIN
+# ./generate_signing_keys_and_certs.sh
+openssl req -subj '/C=US/ST=YOUR_STATE/L=YOUR_CITY/O=YOUR_COMPANY/CN=YOUR_OP_HOST_DOMAIN' -new -key private.pem -out server.csr   
+```
+ 
+(2) Generate RSA keypair for JWT signing (required)
 
 ```bash
 #Generates a private key, public key, JWK and stores into "signing-keys-and-certs" directory
 ./generate_signing_keys_and_certs.sh
 ```
 
-(2) Generate encryption keys for authorization code and state (required)
+(3) Generate encryption keys for authorization code and state (required)
 
 ```bash
 # run following command
@@ -20,7 +35,7 @@ OpenID Connect Provider implementation, configure your OpenID-Connect Provider i
     "codeEncryptionKey": "STATE_ENCRYPTION_KEY", 
 ```
 
-(3) Generate master client_id, client_secret to call client credentials CRUD APIs (required)
+(4) Generate master client_id, client_secret to call client credentials CRUD APIs (required)
 
 ```bash
 # run following command
@@ -33,7 +48,7 @@ OpenID Connect Provider implementation, configure your OpenID-Connect Provider i
     } 
 ```
 
-(4) Setup dynamodb and add tables (required)
+(5) Setup dynamodb and add tables (required)
 
 ```bash
 # create dynamodb in AWS and
@@ -68,7 +83,7 @@ Hash Attribute name: client_id Type: String
 Global Secondary Index (GSI) #2 name: client_name_index, attribute: client_name type: string
 ```
 
-(5) Add dynamodb configuration (required)
+(6) Add dynamodb configuration (required)
 
 ```bash
 # global configuration
@@ -82,7 +97,7 @@ ie.
     }
 ```
 
-(6) Configure authentication script (required)
+(7) Configure authentication script (required)
 
 ```bash
 # authentication configuration: required, needs to be implemented for user authentication
@@ -92,7 +107,7 @@ path: ./configuration/authentication/authentication_script.js
 variables: ./configuration/authentication/authentication_script_variables.json - configure variables to be passed in above script
 ```
 
-(7) Configure grant type hooks (optional)
+(8) Configure grant type hooks (optional)
 
 ```bash
 # hooks configuration
@@ -123,7 +138,7 @@ f) jwt bearer grant hook : optional
 script path: ./configuration/hooks/jwt_bearer_grant_hook.js - intercept jwt-bearer grant and add/remove id_token claims
 ```
 
-(8) Update Login page (optional)
+(9) Update Login page (optional)
 
 ```bash
 # login page

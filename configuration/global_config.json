@@ -3,7 +3,7 @@
     "codeEncryptionKey": "CODE_ENCRYPTION_KEY",
     "jwtExpirySeconds": 432000,        
     "wellKnownConfiguration": {
-        "host": "op.example.org",
+        "host": "YOUR_OP_HOST_DOMAIN",
         "scopes_supported": [
             "openid",
             "profile",
@@ -43,8 +43,8 @@
         ]                        
     },
     "dynamoDBConfiguration": {
-        "endpoint": "http://localhost:8000",
-        "region": "us-west-2"
+        "endpoint": "ADD_DYNAMODB_ENDPOINT_HERE",
+        "region": "AWS_REGION"
     },
     "dynamoDBTablesNames": {
         "authorizationCode": "oidc-authorization-codes",

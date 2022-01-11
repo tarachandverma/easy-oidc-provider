@@ -12,7 +12,7 @@ function validateAPIToken(globalConfiguration, cryptoKeys) {
             return done(new Error('UnauthorizedError', 'Invalid token.'));
         }
         const jwtIssuer = payload.iss;
-        var currentIssuer = utils.getCurrentIssuer(req.hostname);
+        var currentIssuer = "https://" + globalConfiguration.wellKnownConfiguration.host + "/";
         if(!jwtIssuer || !currentIssuer || jwtIssuer !== currentIssuer) {
             return done(new Error('UnauthorizedError', 'Invalid issuer.'));
         }

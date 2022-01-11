@@ -13,6 +13,7 @@ const app = 'http://localhost:8080';
 const fs = require('fs');
 let globalConfigurationRaw = fs.readFileSync('./configuration/global_config.json');
 let globalConfiguration = JSON.parse(globalConfigurationRaw);
+const OP_HOST = globalConfiguration.wellKnownConfiguration.host;
 console.log(globalConfiguration);
 
 describe('OIDC API', () => {
@@ -29,7 +30,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/oauth2/token')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('grant_type=client_credentials&'
                 +'client_id=' + client_id + '&client_secret=' + client_secret + '&scope='+scope)
             .expect(function(res) {
@@ -52,7 +53,7 @@ describe('OIDC API', () => {
         console.log("client generated:", client);
         request(app)
             .post('/api/clients')
-            .set('Host', "op.example.org")            
+            .set('Host', OP_HOST)            
             .set('Authorization', 'Bearer ' + API_TOKEN)
             .send(client)
             .expect(function(res) {
@@ -68,7 +69,7 @@ describe('OIDC API', () => {
     it('returns 200 on wellknown endpoint /.well-known/openid-configuration', (done) => {
         request(app)
             .get('/.well-known/openid-configuration')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .expect(function(res) {
                 console.log(res.body);
                 res.body.should.have.property('issuer');
@@ -86,7 +87,7 @@ describe('OIDC API', () => {
     it('returns 200 on wellknown JWKS endpoint /.well-known/jwks.json', (done) => {
         request(app)
             .get('/.well-known/jwks.json')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .expect(function(res) {
                 console.log(res.body);
                 res.body.should.have.property('keys');
@@ -99,7 +100,7 @@ describe('OIDC API', () => {
     it('returns 302 to login on authorize code grant API /oauth2/authorize with valid client_id when user not logged-in', (done) => {
         request(app)
             .get('/oauth2/authorize?scope=openid+email+given_name+family_name&client_id='+CLIEND_ID+'&response_type=code&redirect_uri='+REDIRECT_URI+'&state=https%3A%2F%2Fclient.example.com%2F&nonce=44b888fc-74da-490e-93c2-f4e29779f5d8')
-            .set('Host', "op.example.org")
+            .set('Host', OP_HOST)
             .expect(function(res) {
               console.log(res.header.location);
               res.header.location.should.not.empty();
@@ -119,7 +120,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/authenticate')
             .set('Content-Type', 'application/json')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send(post_body)
             .expect(function(res) {
                 console.log(res.text)
@@ -137,7 +138,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/postauth/handler')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('token=' + userToken1 + '&ctx=' + context1)
             .expect(function(res) {
                 console.log(res.body)
@@ -155,7 +156,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/authenticate')
             .set('Content-Type', 'application/json')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send(post_body)
             .expect(function(res) {
                 console.log(res.text)
@@ -175,7 +176,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/postauth/handler')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('token=' + userToken2 + '&ctx=' + context2)
             .expect(function(res) {
               console.log(res.header.location);
@@ -206,7 +207,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/oauth2/token')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('grant_type=authorization_code&' + 
                 '&client_id=' + CLIEND_ID + '&client_secret='+ CLIEND_SECRET + 
                 '&code=' + authorizationCode + '&redirect_uri=' + redirect_uri)
@@ -225,7 +226,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/oauth2/token')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('grant_type=refresh_token&' + 
                 '&client_id=' + CLIEND_ID + '&client_secret='+ CLIEND_SECRET + 
                 '&refresh_token=' + refreshToken)
@@ -241,7 +242,7 @@ describe('OIDC API', () => {
     it('returns 302 to callback url on /oauth2/authorize implicit grant API /oauth2/authorize with valid client_id but invalid/expired browser logged-in session', (done) => {
         request(app)
             .get('/oauth2/authorize?scope=openid+email+given_name+family_name&'+'client_id='+CLIEND_ID+'&response_type=id_token&redirect_uri=http://localhost/callback&state=https%3A%2F%2Fclient.example.com%2F&nonce=44b888fc-74da-490e-93c2-f4e29779f5d8')
-            .set('Host', "op.example.org")
+            .set('Host', OP_HOST)
             .set('Cookie', ['sso_session='+ssoSession])
             .expect(function(res) {
                 console.log(res.body);
@@ -255,7 +256,7 @@ describe('OIDC API', () => {
     it('returns 302 to login page on /oauth2/authorize code grant API /oauth2/authorize with valid client_id but invalid browser logged-in session', (done) => {    
         request(app)
             .get('/oauth2/authorize?scope=openid+email+given_name+family_name&'+'client_id='+CLIEND_ID+'&response_type=id_token&redirect_uri=http://localhost/callback&state=https%3A%2F%2Fclient.example.com%2F&nonce=44b888fc-74da-490e-93c2-f4e29779f5d8')
-            .set('Host', "op.example.org")
+            .set('Host', OP_HOST)
             .set('Cookie', ['sso_session=INVALID_SESSION'])
             .expect(function(res) {
                 console.log(res.body);
@@ -272,7 +273,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/oauth2/token')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('grant_type=password&'
                 +'username=' + username + '&password=' + password 
                 + '&client_id=' + CLIEND_ID + '&scope='+scope)          
@@ -289,7 +290,7 @@ describe('OIDC API', () => {
         request(app)
             .post('/oauth2/token')
             .set('Content-Type', 'application/x-www-form-urlencoded')
-            .set('Host', "op.example.org")               
+            .set('Host', OP_HOST)               
             .send('grant_type=client_credentials&'
                 +'client_id=' + CLIEND_ID + '&client_secret=' + CLIEND_SECRET + '&scope='+scope)
             .expect(function(res) {

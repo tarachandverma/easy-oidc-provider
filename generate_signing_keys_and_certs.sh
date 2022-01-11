@@ -9,7 +9,7 @@ openssl rsa -passin pass:SomePassword -in private.pass.pem -out private.pem
 rm -rf private.pass.pem
 
 # generate self-signed certificate signing request
-openssl req -subj '/C=US/ST=YOUR_STATE/L=YOUR_CITY/O=YOUR_COMPANY/CN=op.example.org' -new -key private.pem -out server.csr
+openssl req -subj '/C=US/ST=YOUR_STATE/L=YOUR_CITY/O=YOUR_COMPANY/CN=YOUR_OP_HOST_DOMAIN' -new -key private.pem -out server.csr
 
 # generate self-signed certificate valid for 10 years
 openssl x509 -req -sha256 -days 3650 -in server.csr -signkey private.pem -out server.crt
