@@ -42,13 +42,17 @@ describe('OIDC API', () => {
     });
      
     // generate new client credentials using above API_TOKEN
-    it('returns a 201 after new client created', (done) => {
+    it('returns a 200 after new client created', (done) => {
         const randomId = "TestClient" + crypto.randomBytes(8).toString("hex").slice(0, 8);       
         const client = {
             "name": `${randomId}`,
             "callback_urls":[
                REDIRECT_URI
-            ]
+            ],
+            "scopes":[
+               "api:myapi_1",
+               "api:myapi_2"
+            ]            
         };
         console.log("client generated:", client);
         request(app)
@@ -286,7 +290,7 @@ describe('OIDC API', () => {
     
     // client_credentials grant: call token endpoint
     it('returns 200 on resource owner grant API /oauth2/token when submitted with valid client_id and client_secret', (done) => {
-        var scope = 'openid+email+given_name+family_name';
+        var scope = 'api:myapi';
         request(app)
             .post('/oauth2/token')
             .set('Content-Type', 'application/x-www-form-urlencoded')
@@ -298,6 +302,6 @@ describe('OIDC API', () => {
                 res.body.should.have.property('access_token');
             })
             .expect(200, done);
-    });   
+    });  
     
 });

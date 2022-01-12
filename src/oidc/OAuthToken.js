@@ -363,17 +363,22 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 return res.status(400).send({error: 'invalid_request', error_description: 'scope is missing'});
             }
             var scopes = req.body.scope.split(' ');
+            var allowedScopes = null;
             var clientFound = {}
             if (scopes.includes('create:client')) {
                 clientFound.client_id = globalConfiguration.clientAPICredentials.client_id;
                 clientFound.client_secret = globalConfiguration.clientAPICredentials.client_secret;
+                allowedScopes = scopes;
             }else{
                 const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
                 if (clientData ==null || clientData.Item ==null){
                     return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
                 }
                 clientFound.client_id = clientData.Item.client_id;
-                clientFound.client_secret = clientData.Item.client_secret;                                
+                clientFound.client_secret = clientData.Item.client_secret;
+                // TODO: filter request scope with client's configured scopes and return only allowed scopes
+                // for now
+                allowedScopes = scopes;
             }               
             
             // validate client_secret
@@ -399,9 +404,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             issuer: issuer, 
                             expiresIn: cryptoKeys.JWT_EXPIRY_SECONDS
                         }
-                        var access_token = jwt.sign({sub: user.id}, cryptoKeys.privateKey, jwtOptions);
+                        var access_token = jwt.sign({sub: user.id, scope: allowedScopes.join(" ")}, cryptoKeys.privateKey, jwtOptions);
                         var response = {
-                            "scope": context.scope,
                             "access_token": access_token,
                             "token_type": "bearer"
                         }

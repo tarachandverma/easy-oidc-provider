@@ -49,8 +49,8 @@ module.exports = ({ docClient, globalConfiguration }) => resource({
         
         var client_id = randtoken.generate(40);
         var client_secret = uid.sync(64);
-        var client = new Client(body.name, client_id, client_secret, body.callback_urls);                            
-        // store session in the database
+        var client = new Client(body.name, client_id, client_secret, body.callback_urls, body.scopes);                            
+        // store client in the database
         const create_params = {
           TableName : globalConfiguration.dynamoDBTablesNames.clientCredential,
           Item: client,
@@ -73,7 +73,8 @@ module.exports = ({ docClient, globalConfiguration }) => resource({
                 name: client.client_name,
                 client_id: client.client_id,
                 client_secret: client.client_secret,
-                callback_urls: client.callback_urls
+                callback_urls: client.callback_urls,
+                scopes: client.scopes
             }
             res.json(response);
         }else{
@@ -94,13 +95,15 @@ module.exports = ({ docClient, globalConfiguration }) => resource({
             client_name = :cn, \
             client_secret = :cs, \
             callback_urls = :cbkurls, \
+            scopes = :scopes, \
             updated_at = :upt"
             ,
             ConditionExpression: "created_at > :zero",
             ExpressionAttributeValues:{
                 ":cn": body.name || client.client_name,
                 ":cs": body.client_secret || client.client_secret,                
-                ":cbkurls": body.callback_urls || client.client_name,
+                ":cbkurls": body.callback_urls || client.callback_urls,
+                ":scopes": body.scopes || client.scopes,                
                 ":upt": Math.floor(Date.now() / 1000),
                 ":zero": 0
             },

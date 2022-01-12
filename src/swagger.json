@@ -29,7 +29,7 @@
           {
             "in": "body",
             "name": "Request body",
-            "description": "Describes request body to create a new API client",
+            "description": "Describes request body to create a new API client, supported scopes here: /.well-known/openid-configuration",
             "schema": {
               "type": "object",
               "required": [
@@ -44,7 +44,13 @@
                   "items": {
                     "type": "string"
                   } 
-                }
+                },
+                "scopes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  } 
+                }                
               }
             }
           }
@@ -219,7 +225,7 @@
           {
             "in": "body",
             "name": "Request body",
-            "description": "Describes request body to create a new API client",
+            "description": "Describes request body to create a new API client, supported scopes here: /.well-known/openid-configuration",
             "schema": {
               "type": "object",
               "required": [
@@ -234,7 +240,13 @@
                   "items": {
                     "type": "string"
                   } 
-                }
+                },
+                "scopes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  } 
+                }                
               }
             }
           }
@@ -313,7 +325,13 @@
           "items": {
             "type": "string"
           }                      
-        }                
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }                      
+        }                        
       }
     },  
     "ErrorResponse": {
