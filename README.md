@@ -1,6 +1,13 @@
 # easy-oidc-provider - easy to setup OpenID Connect Provider
 OpenID Connect Provider implementation, configure your OpenID-Connect Provider in less than an hour
 
+# OIDC Grants supported
+- Authorization code
+- Implicit
+- Refresh Token
+- JWT-Bearer
+- Client Credentials
+
 # Prerequisites
 
 (1) Choose OpenID-Connect Provider domain
