@@ -62,7 +62,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
             var user = sessionData.Item.user;
                          
               try {
-                var context = {
+                var params = {
                     request: req,
                     redirect_uri: queryObject.redirect_uri,
                     nonce: queryObject.nonce,
@@ -76,7 +76,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                 var hookScript = '../../configuration/hooks/post_authentication_hook.js';
                 const handler = await import(hookScript);
                 // TODO: run a for loop of all the rules here to enhance to id_token
-                handler.default(user, context, globalHooksConfiguration.configuration, function (error, user, context) {
+                handler.default(user, params, globalHooksConfiguration.configuration, function (error, user, params) {
                     //console.log(user)
                     //console.log(error);
                     if (user) {
@@ -91,16 +91,16 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                         update_params.Item.ttl = Math.floor(Date.now() / 1000) + 900000 /*dynamodb_ttl*/;
                         // TODO: update session data in DB
                         //docClient.update(update_params, function(err, data) { 
-                            var location = context.redirect_uri;
-                            if(context.response_type==='id_token') {
+                            var location = params.redirect_uri;
+                            if(params.response_type==='id_token') {
                                 const jwtOptions = {
                                     algorithm: 'RS256', 
                                     keyid: cryptoKeys.jwksJson.keys[0].kid,
-                                    audience: context.client_id, 
+                                    audience: params.client_id, 
                                     issuer: issuer, 
                                     expiresIn: cryptoKeys.JWT_EXPIRY_SECONDS
                                 }                                    
-                                var claims = utils.getIdTokenClaims(user.id, user, context.scope, context.nonce);
+                                var claims = utils.getIdTokenClaims(user.id, user, params.scope, params.nonce);
                                 var token = jwt.sign(claims, cryptoKeys.privateKey, jwtOptions);
                                 location = queryObject.redirect_uri + '?id_token=' + token;
                                 if (queryObject.state) location += '&state=' + queryObject.state;
@@ -110,8 +110,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                                 res.end();                                
                             }else{ // default: return authorization code
                                 var code = uid.sync(40);
-                                var authorizationCode = new AuthorizationCode(code, sessionData.sessionId, context.client_id, user.id, context.scope, context.nonce);                            
-                                location = context.redirect_uri + '?code=' + code;
+                                var authorizationCode = new AuthorizationCode(code, sessionData.sessionId, params.client_id, user.id, params.scope, params.nonce);                            
+                                location = params.redirect_uri + '?code=' + code;
                                 // store session in the database
                                 const create_params = {
                                   TableName : globalConfiguration.dynamoDBTablesNames.authorizationCode,
@@ -120,7 +120,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                                 }
                                 create_params.Item.ttl = Math.floor(Date.now() / 1000) + 100 /*dynamodb_ttl*/;
                                 docClient.put(create_params, function(err, data) {
-                                    if (context.state) location += '&state=' + context.state;
+                                    if (params.state) location += '&state=' + params.state;
                                     res.writeHead(302, {
                                       location: location
                                     });

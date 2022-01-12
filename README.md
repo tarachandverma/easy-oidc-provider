@@ -191,7 +191,7 @@ RP
 ...
 GET RP_CALLBACK_URL?code=&state=
 [POST: http://localhost:8080/oauth2/token
- body: code=&redirect_uri=&client_id=&client_secret=
+ body: code=&redirect_uri=&client_id=&client_secret=&grant_type=authorization_code
  retrieve id_token
  RP consumes id_token as necesary
 ]

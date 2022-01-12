@@ -19,35 +19,35 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
         }
         catch (ex) { console.log(ex.message); }
                 
-        var requestContext = JSON.parse(req.body.ctx);
-        //console.log('RequestContext', requestContext);
+        var requestParams = JSON.parse(req.body.params);
+        //console.log('requestParams', requestParams);
         
-        var context = {
+        var params = {
             request: req,
-            redirect_uri: requestContext.redirect_uri
+            redirect_uri: requestParams.redirect_uri
         }
         
-        var client_id = requestContext.client_id;
+        var client_id = requestParams.client_id;
         // validate client_id
-        if (requestContext.client_id == null){
+        if (requestParams.client_id == null){
             return res.status(400).send({error: 'invalid_request', error_description: 'client_id is missing'});
         }
        
-        const clientData = await utils.getClientCredentials(docClient, globalConfiguration, requestContext.client_id);
+        const clientData = await utils.getClientCredentials(docClient, globalConfiguration, requestParams.client_id);
         if (clientData ==null || clientData.Item ==null){
             return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
         }
         
         var originalState=null;
-        if (requestContext.state) {
-            originalState = utils.decryptPayload(requestContext.state, cryptoKeys.stateEncryptionKey)
+        if (requestParams.state) {
+            originalState = utils.decryptPayload(requestParams.state, cryptoKeys.stateEncryptionKey)
         }
         var issuer = "https://" + globalConfiguration.wellKnownConfiguration.host + "/";
           try {
             var hookScript = '../../configuration/hooks/post_authentication_hook.js';
             const handler = await import(hookScript);
             // TODO: run a for loop of all the rules here to enhance to id_token
-            handler.default(user, context, globalHooksConfiguration.configuration, function (error, user, context) {
+            handler.default(user, params, globalHooksConfiguration.configuration, function (error, user, params) {
                 if (user) {
                     var sessionId = uid.sync(40);
                     var session = new Session(sessionId, user.id);
@@ -64,8 +64,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                         //console.log(err);
                         res.cookie("session", sessionId, { expires: new Date(Date.now() + 900000), httpOnly: true, secure: true, sameSite: "none" })
 
-                        var location = context.redirect_uri;
-                        if(requestContext.response_type==='id_token') {
+                        var location = params.redirect_uri;
+                        if(requestParams.response_type==='id_token') {
                             const jwtOptions = {
                                 algorithm: 'RS256', 
                                 keyid: cryptoKeys.jwksJson.keys[0].kid, 
@@ -73,9 +73,9 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                                 issuer: issuer, 
                                 expiresIn: cryptoKeys.JWT_EXPIRY_SECONDS
                             }
-                            var claims = utils.getIdTokenClaims(user.id, user, requestContext.scope, requestContext.nonce);
+                            var claims = utils.getIdTokenClaims(user.id, user, requestParams.scope, requestParams.nonce);
                             var token = jwt.sign(claims, cryptoKeys.privateKey, jwtOptions);
-                            location = context.redirect_uri + '?id_token=' + token;
+                            location = params.redirect_uri + '?id_token=' + token;
                             if (originalState) location += '&state=' + originalState;
                             res.writeHead(302, {
                               location: location
@@ -83,8 +83,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                             res.end();                                
                         }else{ // default: return authorization code
                             var code = uid.sync(40);
-                            var authorizationCode = new AuthorizationCode(code, sessionId, requestContext.client_id, user.id, requestContext.scope, requestContext.nonce);                            
-                            location = context.redirect_uri + '?code=' + code;
+                            var authorizationCode = new AuthorizationCode(code, sessionId, requestParams.client_id, user.id, requestParams.scope, requestParams.nonce);                            
+                            location = params.redirect_uri + '?code=' + code;
                             // store session in the database
                             const create_params = {
                               TableName : globalConfiguration.dynamoDBTablesNames.authorizationCode,
