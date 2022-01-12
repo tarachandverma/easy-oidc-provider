@@ -118,7 +118,7 @@ describe('OIDC API', () => {
 
     // login page calling /authenticate API which should returns auto-post HTML which can be POST'ed to /postauth/handler
     var userToken1 = null;
-    var context1 = null;
+    var params1 = null;
     it('returns 200 on authenticate API /authenticate when submitted with valid username and password', (done) => {
         var post_body = '{"client_id":"'+CLIEND_ID+'","redirect_uri":"'+REDIRECT_URI+'","response_type":"id_token","headers":{"X-REMOTE-USER":"johndoe"},"username":"johndoe","password":"mypassword","scope":"openid email given_name family_name offline_access","state":"'+OP_STATE+'","protocol":"oauth2","nonce":"44b888fc-74da-490e-93c2-f4e29779f5d8","_csrf":"4Tz328WZ-O38twSEL9bhn9wwQ7x4oIiSwRwc"}';
         request(app)
@@ -130,20 +130,20 @@ describe('OIDC API', () => {
                 console.log(res.text)
                 const htmlHandler = cheerio.load(res.text)
                 console.log("UserToken:", htmlHandler("form input[name='token']").attr("value"))
-                console.log("Context:", htmlHandler("form input[name='ctx']").attr("value")) 
+                console.log("Params:", htmlHandler("form input[name='params']").attr("value")) 
                 userToken1 = htmlHandler("form input[name='token']").attr("value");
-                context1 = htmlHandler("form input[name='ctx']").attr("value");
+                params1 = htmlHandler("form input[name='params']").attr("value");
             })                                 
             .expect(200, done);
     });
     
     // implicit grant: /postauth/handler should write sso session in browser as well returns to callback url with authorization code
-    it('returns 302 with id_token on post authentication handler API /postauth/handler when submitted with valid token and context', (done) => {
+    it('returns 302 with id_token on post authentication handler API /postauth/handler when submitted with valid token and params', (done) => {
         request(app)
             .post('/postauth/handler')
             .set('Content-Type', 'application/x-www-form-urlencoded')
             .set('Host', OP_HOST)               
-            .send('token=' + userToken1 + '&ctx=' + context1)
+            .send('token=' + userToken1 + '&params=' + params1)
             .expect(function(res) {
                 console.log(res.body)
                 console.log(res.header.location);
@@ -154,7 +154,7 @@ describe('OIDC API', () => {
     
     // authorization code flow
     var userToken2 = null;
-    var context2 = null;
+    var params2 = null;
     it('returns 200 on authenticate API /authenticate when submitted with valid username and password', (done) => {
         var post_body = '{"client_id":"'+CLIEND_ID+'","redirect_uri":"'+REDIRECT_URI+'","response_type":"code","headers":{"X-REMOTE-USER":"johndoe"},"username":"johndoe","password":"mypassword","scope":"openid email given_name family_name offline_access","state":"'+OP_STATE+'","protocol":"oauth2","nonce":"44b888fc-74da-490e-93c2-f4e29779f5d8","_csrf":"4Tz328WZ-O38twSEL9bhn9wwQ7x4oIiSwRwc"}';
         request(app)
@@ -166,9 +166,9 @@ describe('OIDC API', () => {
                 console.log(res.text)
                 const htmlHandler = cheerio.load(res.text)
                 console.log("UserToken:", htmlHandler("form input[name='token']").attr("value"))
-                console.log("Context:", htmlHandler("form input[name='ctx']").attr("value")) 
+                console.log("Params:", htmlHandler("form input[name='params']").attr("value")) 
                 userToken2 = htmlHandler("form input[name='token']").attr("value");
-                context2 = htmlHandler("form input[name='ctx']").attr("value");
+                params2 = htmlHandler("form input[name='params']").attr("value");
             })                                 
             .expect(200, done);
     });
@@ -176,12 +176,12 @@ describe('OIDC API', () => {
     // /postauth/handler writes sso-session to browser and authorization code appended to callback url 
     var authorizationCode = null;
     var ssoSession=null;
-    it('returns 302 with code on post authentication handler API /postauth/handler when submitted with valid token and context', (done) => {
+    it('returns 302 with code on post authentication handler API /postauth/handler when submitted with valid token and params', (done) => {
         request(app)
             .post('/postauth/handler')
             .set('Content-Type', 'application/x-www-form-urlencoded')
             .set('Host', OP_HOST)               
-            .send('token=' + userToken2 + '&ctx=' + context2)
+            .send('token=' + userToken2 + '&params=' + params2)
             .expect(function(res) {
               console.log(res.header.location);
               res.header.location.should.not.empty();
@@ -289,7 +289,7 @@ describe('OIDC API', () => {
     });
     
     // client_credentials grant: call token endpoint
-    it('returns 200 on resource owner grant API /oauth2/token when submitted with valid client_id and client_secret', (done) => {
+    it('returns 200 on client_credentials grant API /oauth2/token when submitted with valid client_id and client_secret', (done) => {
         var scope = 'api:myapi';
         request(app)
             .post('/oauth2/token')

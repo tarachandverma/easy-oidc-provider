@@ -29,7 +29,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 
         try {
             const handler = await import('../../configuration/authentication/authentication_script.js');
-            handler.default(username, password, authenticationScriptConfiguration, function (error, user) {
+            handler.default(username, password, req.body, authenticationScriptConfiguration, function (error, user) {
                 //console.log(user);
                 if (user) {
                     var currentTime = Date.now();
@@ -42,7 +42,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
 
                     jwt.sign(jwtPayload, cryptoKeys.privateKey, { algorithm: 'RS256' }, function(err, token) {
                         //console.log(err);
-                        var context = {
+                        var params = {
                             response_type: response_type,
                             client_id: client_id,
                             redirect_uri: redirect_uri,
@@ -50,11 +50,11 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             scope: scope,
                             nonce: nonce
                         }
-                        var contextSerial = encodeURIComponent(JSON.stringify(context));
+                        var paramsSerial = encodeURIComponent(JSON.stringify(params));
                         var response = 
                             `<form method="post" name="hiddenform" action="https://${OP_HOST}/postauth/handler">` +
                             `<input type="hidden" name="token" value="${token}">` + 
-                            `<input type="hidden" name="ctx" value="${contextSerial}">` +
+                            `<input type="hidden" name="params" value="${paramsSerial}">` +
                             '<noscript>\
                                 <p>Script is disabled. Click Submit to continue.</p>\
                                 <input type="submit" value="Submit">\

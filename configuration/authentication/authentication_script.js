@@ -1,5 +1,5 @@
 const request = require('request');
-module.exports = async function login (email, password, configuration, callback) {
+module.exports = async function login (username, password, request_body, configuration, callback) {
     // call your HTTP API and return profile object
     // you can configure variables in authentication_script_variables.json and refer variables using config.AUTHENTICATE_ENDPOINT 
     // example
