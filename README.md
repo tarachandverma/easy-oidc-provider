@@ -5,6 +5,7 @@ OpenID Connect Provider implementation, configure your OpenID-Connect Provider i
 - Authorization code
 - Implicit
 - Refresh Token
+- Resource Owner Password
 - JWT-Bearer
 - Client Credentials
 
