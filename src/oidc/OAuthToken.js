@@ -27,7 +27,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             client_id: req.body.client_id
         }
         
-        var issuer = "https://" + globalConfiguration.wellKnownConfiguration.host + "/";
+        var issuer = utils.getCurrentOPHttpProtocol(req) + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported) + "/";
                 
         if ( params.grant_type === 'authorization_code') { // authorization code grant
             const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);

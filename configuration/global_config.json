@@ -3,7 +3,7 @@
     "codeEncryptionKey": "CODE_ENCRYPTION_KEY",
     "jwtExpirySeconds": 432000,        
     "wellKnownConfiguration": {
-        "host": "YOUR_OP_HOST_DOMAIN",
+        "hosts_supported": ["YOUR_OP_HOST_DOMAIN"],
         "scopes_supported": [
             "openid",
             "profile",

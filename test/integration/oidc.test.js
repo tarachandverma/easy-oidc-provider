@@ -13,7 +13,7 @@ const app = 'http://localhost:8080';
 const fs = require('fs');
 let globalConfigurationRaw = fs.readFileSync('./configuration/global_config.json');
 let globalConfiguration = JSON.parse(globalConfigurationRaw);
-const OP_HOST = globalConfiguration.wellKnownConfiguration.host;
+const OP_HOST = globalConfiguration.wellKnownConfiguration.hosts_supported[0];
 console.log(globalConfiguration);
 
 describe('OIDC API', () => {
