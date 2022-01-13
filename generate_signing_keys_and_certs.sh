@@ -17,9 +17,9 @@ openssl x509 -req -sha256 -days 3650 -in server.csr -signkey private.pem -out se
 # generate public key from above certificate
 openssl x509 -in server.crt -pubkey -out public.pem
 
-# calculate finger print
-openssl x509 -in public.pem -noout -fingerprint
-
 # convert PEM to JWK
 npm install -g pem-jwk
 cat private.pem | pem-jwk > private_jwk.json
+
+# calculate kid
+echo $(openssl x509 -in server.crt -fingerprint -noout) | sed 's/SHA1 Fingerprint=//g' | sed 's/://g' | base64 | tr '/+' '_-' | tr -d '=' > keyid.txt

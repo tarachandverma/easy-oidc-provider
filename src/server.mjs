@@ -29,7 +29,7 @@ var publicKey = readFileSync('./signing-keys-and-certs/public.pem');
 
 // TODO: all of these keys must come from Vault per environment. PROD should not share any keys
 // this keyId needs to be common between all instances
-const keyId = "9cc7d52d-8b42-4a72-85bb-a38f72450669"
+var keyId = readFileSync('./signing-keys-and-certs/keyid.txt', 'utf8');
 var cryptoKeys = {
     privateKey: privateKey,
     publicKey: publicKey,
