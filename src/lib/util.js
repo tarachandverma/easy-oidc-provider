@@ -95,10 +95,24 @@ async function getClientCredentials(docClient, globalConfiguration, client_id) {
     return clientData;
 }
 
+function getCurrentOPHost(req, hostnameSupported) {
+    var currentOPHost = "localhost";
+    if(hostnameSupported) {
+        currentOPHost = (hostnameSupported.includes(req.headers.host)) ? req.headers.host : hostnameSupported[0];
+    }
+    return currentOPHost;
+}
+
+function getCurrentOPHttpProtocol(req) {
+    return (req.headers['x-forwarded-proto']==='https') ? 'https' : 'http';
+}
+    
 module.exports = {
   decryptPayload: decryptPayload,
   encryptPayload: encryptPayload,
   getIdTokenClaims: getIdTokenClaims,
-  getClientCredentials: getClientCredentials  
+  getClientCredentials: getClientCredentials,
+  getCurrentOPHost: getCurrentOPHost,
+  getCurrentOPHttpProtocol: getCurrentOPHttpProtocol      
 };
 

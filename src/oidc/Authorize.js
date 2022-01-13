@@ -33,7 +33,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
             return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is not allowed'});
         }        
         
-        var issuer = "https://" + globalConfiguration.wellKnownConfiguration.host + "/";        
+        var issuer = utils.getCurrentOPHttpProtocol(req) + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported) + "/";        
         let cookie = req.cookies['sso_session'];
         if(cookie) {
             const get_session_params = {
