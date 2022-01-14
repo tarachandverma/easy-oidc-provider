@@ -38,6 +38,7 @@ function decryptPayload(encryptedPayload, decryptionKey) {
     const initVector = tokenElements[0];
     const encryptedMsg = tokenElements[1];
     
+    if (encryptedMsg == null) return null;
     // make the decrypter function
     const decrypter = crypto.createDecipheriv("aes-256-cbc", decryptionKey, initVector);
     

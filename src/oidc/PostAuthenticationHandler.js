@@ -19,7 +19,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
         }
         catch (ex) { console.log(ex.message); }
                 
-        var requestParams = JSON.parse(req.body.params);
+        var requestParams = JSON.parse(decodeURIComponent(req.body.params));
         //console.log('requestParams', requestParams);
         
         var params = {
@@ -40,7 +40,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
         
         var originalState=null;
         if (requestParams.state) {
-            originalState = utils.decryptPayload(requestParams.state, cryptoKeys.stateEncryptionKey)
+            originalState = utils.decryptPayload(requestParams.state, cryptoKeys.stateEncryptionKey);
+            if(originalState==null) originalState = requestParams.state;
         }
         var issuer = utils.getCurrentOPHttpProtocol(req) + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported) + "/";
           try {

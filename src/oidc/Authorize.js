@@ -34,7 +34,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
         }        
         
         var issuer = utils.getCurrentOPHttpProtocol(req) + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported) + "/";        
-        let cookie = req.cookies['sso_session'];
+        let cookie = req.cookies['session'];
         if(cookie) {
             const get_session_params = {
               TableName : globalConfiguration.dynamoDBTablesNames.ssoSession,
@@ -90,7 +90,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                         update_params.Item.user = user;
                         update_params.Item.ttl = Math.floor(Date.now() / 1000) + 900000 /*dynamodb_ttl*/;
                         // TODO: update session data in DB
-                        //docClient.update(update_params, function(err, data) { 
+                        docClient.update(update_params, function(err, data) { 
                             var location = params.redirect_uri;
                             if(params.response_type==='id_token') {
                                 const jwtOptions = {
@@ -128,7 +128,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                                 });  
                                                                     
                             }
-                        //});                      
+                        });                      
                     } else if (error) {
                         return res.status(401).send(error);
                     } else {
@@ -157,8 +157,14 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                 
             var queryParams = querystring.stringify(queryObject, "&", "=")
             
+            var location = null;
+            if(queryObject.prompt==='none') {
+                location = queryObject.redirect_uri + "?error=aaa" + "&error_description=aaa";
+            } else{
+                location = '/login?' + queryParams
+            }
             res.writeHead(302, {
-              location: '/login-page?' + queryParams
+              location: location
             });
             res.end();
         }

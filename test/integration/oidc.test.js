@@ -247,7 +247,7 @@ describe('OIDC API', () => {
         request(app)
             .get('/oauth2/authorize?scope=openid+email+given_name+family_name&'+'client_id='+CLIEND_ID+'&response_type=id_token&redirect_uri=http://localhost/callback&state=https%3A%2F%2Fclient.example.com%2F&nonce=44b888fc-74da-490e-93c2-f4e29779f5d8')
             .set('Host', OP_HOST)
-            .set('Cookie', ['sso_session='+ssoSession])
+            .set('Cookie', ['session='+ssoSession])
             .expect(function(res) {
                 console.log(res.body);
                 console.log(res.header.location);
@@ -261,7 +261,7 @@ describe('OIDC API', () => {
         request(app)
             .get('/oauth2/authorize?scope=openid+email+given_name+family_name&'+'client_id='+CLIEND_ID+'&response_type=id_token&redirect_uri=http://localhost/callback&state=https%3A%2F%2Fclient.example.com%2F&nonce=44b888fc-74da-490e-93c2-f4e29779f5d8')
             .set('Host', OP_HOST)
-            .set('Cookie', ['sso_session=INVALID_SESSION'])
+            .set('Cookie', ['session=INVALID_SESSION'])
             .expect(function(res) {
                 console.log(res.body);
                 console.log(res.header.location);
