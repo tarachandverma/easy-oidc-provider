@@ -110,7 +110,9 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                                 res.end();                                
                             }else{ // default: return authorization code
                                 var code = uid.sync(40);
-                                var authorizationCode = new AuthorizationCode(code, sessionData.sessionId, params.client_id, user.id, params.scope, params.nonce);                            
+                                var authorizationCode = new AuthorizationCode(code, sessionData.sessionId, 
+                                    params.client_id, user.id, params.scope, params.nonce, 
+                                    queryObject.code_challenge, queryObject.code_challenge_method);                            
                                 location = params.redirect_uri + '?code=' + code;
                                 // store session in the database
                                 const create_params = {
@@ -159,7 +161,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
             
             var location = null;
             if(queryObject.prompt==='none') {
-                location = queryObject.redirect_uri + "?error=aaa" + "&error_description=aaa";
+                location = queryObject.redirect_uri + "?error=login_required" + "&error_description=user%20not%20logged-in";
             } else{
                 location = '/login?' + queryParams
             }

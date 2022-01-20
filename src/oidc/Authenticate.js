@@ -50,6 +50,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                             scope: scope,
                             nonce: nonce
                         }
+                        if(response_type==='code') {
+                            params.code_challenge=req.body.code_challenge;
+                            params.code_challenge_method=req.body.code_challenge_method;
+                        }
                         var paramsSerial = encodeURIComponent(JSON.stringify(params));
                         var response = 
                             `<form method="post" name="hiddenform" action="${OP_HOST}/postauth/handler">` +

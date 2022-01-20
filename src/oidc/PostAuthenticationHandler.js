@@ -84,7 +84,8 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                             res.end();                                
                         }else{ // default: return authorization code
                             var code = uid.sync(40);
-                            var authorizationCode = new AuthorizationCode(code, sessionId, requestParams.client_id, user.id, requestParams.scope, requestParams.nonce);                            
+                            var authorizationCode = new AuthorizationCode(code, sessionId, requestParams.client_id, user.id, 
+                            	requestParams.scope, requestParams.nonce, requestParams.code_challenge, requestParams.code_challenge_method);
                             location = params.redirect_uri + '?code=' + code;
                             // store session in the database
                             const create_params = {

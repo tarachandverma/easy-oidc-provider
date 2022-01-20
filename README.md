@@ -3,6 +3,7 @@ OpenID Connect Provider implementation, configure your OpenID-Connect Provider i
 
 # OIDC Grants supported
 - Authorization code
+- Authorization code with PKCE
 - Implicit
 - Refresh Token
 - Resource Owner Password
@@ -17,7 +18,7 @@ OpenID Connect Provider implementation, configure your OpenID-Connect Provider i
 (a) open global_config.json in editor and set YOUR_OP_HOST_DOMAIN as you openID-Connect provider domain i.e. op.example.org
 # ./configuration/global_config.json
     "wellKnownConfiguration": {
-        "host": "YOUR_OP_HOST_DOMAIN"
+        "hosts_supported": ["YOUR_OP_HOST_DOMAIN"]
         ...
     }
 (b) open generate_signing_keys_and_certs.sh in editor and set certificate YOUR_STATE, YOUR_CITY, YOUR_COMPANY and YOUR_OP_HOST_DOMAIN
@@ -68,7 +69,7 @@ Table #1 - Authorization codes
 Purpose: store authorization code
 Name: oidc-authorization-codes
 Hash Attribute name: code Type: String
-Global Secondary Index (GSI) name: session_id_index, type: session_id
+Global Secondary Index (GSI) name: session_id_index, attribute: session_id, type: string
 
 Table #2 - Refresh tokens
 Purpose: store refresh tokens
@@ -76,15 +77,15 @@ Name: oidc-refresh-tokens
 Hash Attribute name: token Type: String
 Global Secondary Index (GSI):
 Hash Attribute name: refresh_token Type: String
-Global Secondary Index (GSI) #1 name: session_id_index, type: session_id
-Global Secondary Index (GSI) #2 name: user_id_index, type: user_id
+Global Secondary Index (GSI) #1 name: session_id_index, attribute: session_id type: string
+Global Secondary Index (GSI) #2 name: user_id_index, attribute: user_id type: string
 
 Table #3 - Single sign on session
 Purpose: store single sign on session 
 Name: oidc-sso-sessions
 Global Secondary Index (GSI):
 Hash Attribute name: id Type: String
-Global Secondary Index (GSI) #2 name: user_id_index, type: user_id
+Global Secondary Index (GSI) #2 name: user_id_index, attribute: user_id type: string
 
 Table #4 - Client credentials
 Purpose: Store client_id, client_secret and redirect_uri ( callback urls) 

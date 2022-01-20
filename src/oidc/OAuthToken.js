@@ -4,6 +4,8 @@ const utils  =  require('../lib/util');
 const uid = require('uid-safe');
 const RefreshToken = require('../models/RefreshToken')
 const Session = require('../models/Session')
+const crypto = require("crypto");
+const base64url = require("base64url");
 
 module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, globalHooksConfiguration }) => {
     let api = Router();
@@ -43,14 +45,6 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is not allowed'});
             }
 
-            // validate client_secret
-            if (req.body.client_secret == null) {
-                return res.status(400).send({error: 'invalid_request', error_description: 'client_secret is missing'});
-            }
-            if (clientData.Item.client_secret == null || req.body.client_secret !== clientData.Item.client_secret){
-                return res.status(400).send({error: 'invalid_request', error_description: 'client_secret mismatch'});
-            }
-                                    
             // TODO: validate required parameters as per the spec
             var code = req.body.code;
             // get from the dynamodb
@@ -67,6 +61,31 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             params.client_id = codeData.Item.client_id;
             params.session_id =  codeData.Item.session_id;
             
+            if(codeData.Item.code_challenge && codeData.Item.code_challenge_method) {
+                // validate code_challenge and code_challenge_method with code verifier
+                if(req.body.code_verifier==null) {
+                    return res.status(400).send({error: 'invalid_request', error_description: 'code_verifier missing'});
+                }
+                if(codeData.Item.code_challenge_method!=='S256') {
+                    return res.status(400).send({error: 'invalid_request', error_description: 'invalid code_challenge_method'});
+                }                
+                // generate code_challenge
+                const base64Digest = crypto.createHash("sha256").update(req.body.code_verifier).digest("base64");
+                //console.log(base64Digest);
+                const code_challenge = base64url.fromBase64(base64Digest);
+                //console.log(code_challenge);
+                if(code_challenge !== codeData.Item.code_challenge) {
+                    return res.status(400).send({error: 'invalid_request', error_description: 'invalid code_verifier'});
+                }                                
+            }else{ // validate client_secret
+                if (req.body.client_secret == null) {
+                    return res.status(400).send({error: 'invalid_request', error_description: 'client_secret is missing'});
+                }
+                if (clientData.Item.client_secret == null || req.body.client_secret !== clientData.Item.client_secret){
+                    return res.status(400).send({error: 'invalid_request', error_description: 'client_secret mismatch'});
+                }
+            }
+                        
             const get_session_params = {
               TableName : globalConfiguration.dynamoDBTablesNames.ssoSession,
                 Key:{
