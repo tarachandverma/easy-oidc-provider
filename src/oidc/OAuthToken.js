@@ -18,7 +18,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
 
         // validate client_id
         if (req.body.client_id == null){
-            return res.status(400).send({error: 'invalid_request', error_description: 'client_id is missing'});
+            return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is missing');
         }
 
         var params = {
@@ -34,7 +34,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         if ( params.grant_type === 'authorization_code') { // authorization code grant
             const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
             if (clientData ==null || clientData.Item ==null){
-                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+                return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
             }
                     
             // validate redirect_uri
@@ -55,12 +55,24 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                 }          
             }            
             const codeData = await docClient.get(get_code_params).promise();
+            if(codeData==null || codeData.Item==null) {
+                return utils.sendErrorResponse(res, null, 'invalid_request', 'invalid authorization code');
+            }
             //console.log(codeData);
             params.scope = codeData.Item.scope;
             params.nonce = codeData.Item.nonce;
             params.client_id = codeData.Item.client_id;
             params.session_id =  codeData.Item.session_id;
             
+            // delete authorization code after one user
+            const delete_params = {
+                TableName : globalConfiguration.dynamoDBTablesNames.authorizationCode,
+                Key:{
+                    "code": code
+                }         
+            }            
+            docClient.delete(delete_params).promise();
+                        
             if(codeData.Item.code_challenge && codeData.Item.code_challenge_method) {
                 // validate code_challenge and code_challenge_method with code verifier
                 if(req.body.code_verifier==null) {
@@ -99,7 +111,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
               try {
                 var hookScript = '../../configuration/hooks/post_authentication_hook.js';
                 const handler = await import(hookScript);
-                // TODO: run a for loop of all the rules here to enhance to id_token
+                // run the hook to add/remove claims to id_token
                 handler.default(user, params, globalHooksConfiguration.configuration, async function (error, user, params) {
                     //console.log(user);
                     if (user) {
@@ -144,7 +156,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                         }
                         return res.status(500).send(error);
                     }
-                });
+                }).catch( err => {
+                    console.log("post_authentication_hook.js load error:", err);
+                    res.status(500).send(err);
+                } );
               } catch(err) {
                 var error = { 
                     errors: [
@@ -156,7 +171,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         } else if ( params.grant_type === 'refresh_token'  ) { // authorization code grant
             const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
             if (clientData ==null || clientData.Item ==null){
-                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+                return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
             }
                     
             var token = req.body.refresh_token;
@@ -190,7 +205,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
               try {
                 var hookScript = '../../configuration/hooks/refresh_token_grant_hook.js';
                 const handler = await import(hookScript);
-                // TODO: run a for loop of all the rules here to enhance to id_token
+                // run the hook to add/remove claims to id_token
                 handler.default(user, params, globalHooksConfiguration.configuration, async function (error, user, params) {
                     //console.log(user);
                     if (user) {
@@ -221,7 +236,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                         }
                         return res.status(500).send(error);
                     }
-                });
+                }).catch( err => {
+                    console.log("refresh_token_grant_hook.js load error:", err);
+                    res.status(500).send(err);
+                } );
               } catch(err) {
                 var error = { 
                     errors: [
@@ -238,7 +256,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             params.client_id = client_id;
             const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
             if (clientData ==null || clientData.Item ==null){
-                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+                return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
             }
                         
               try {
@@ -301,7 +319,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                         }
                         return res.status(500).send(error);
                     }
-                });
+                }).catch( err => {
+                    console.log("authentication_script.js load error:", err);
+                    res.status(500).send(err);
+                } );
               } catch(err) {
                 var error = { 
                     errors: [
@@ -332,13 +353,13 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                     
             const clientData = await utils.getClientCredentials(docClient, globalConfiguration, client_id);
             if (clientData ==null || clientData.Item ==null){
-                return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+                return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
             }
                     
               try {
                 var hookScript = '../../configuration/hooks/jwt_bearer_grant_hook.js';
                 const handler = await import(hookScript);
-                // TODO: run a for loop of all the rules here to enhance to id_token
+                // run the hook to add/remove claims to id_token
                 handler.default(user, params, globalHooksConfiguration.configuration, async function (error, user, params) {
                     if (user) {
                         const jwtOptions = {
@@ -366,7 +387,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                         }
                         return res.status(500).send(error);
                     }
-                });
+                }).catch( err => {
+                    console.log("jwt_bearer_grant_hook.js load error:", err);
+                    res.status(500).send(err);
+                } );
               } catch(err) {
                 var error = { 
                     errors: [
@@ -391,7 +415,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
             }else{
                 const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
                 if (clientData ==null || clientData.Item ==null){
-                    return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+                    return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
                 }
                 clientFound.client_id = clientData.Item.client_id;
                 clientFound.client_secret = clientData.Item.client_secret;
@@ -439,7 +463,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                         }
                         return res.status(500).send(error);
                     }
-                });
+                }).catch( err => {
+                    console.log("client_credentials_grant_hook.js load error:", err);
+                    res.status(500).send(err);
+                } );
               } catch(err) {
                 var error = { 
                     errors: [

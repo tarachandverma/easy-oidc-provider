@@ -1,6 +1,6 @@
 {
   "name": "openid_connect_server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "runs openid connect server",
   "main": "server.mjs",
   "scripts": {
@@ -29,6 +29,7 @@
     "express-jwt": "^6.1.0",
     "fs": "0.0.1-security",
     "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^2.0.5",
     "lru-cache": "^5.1.1",
     "mocha": "^9.1.3",
     "moment": "^2.26.0",

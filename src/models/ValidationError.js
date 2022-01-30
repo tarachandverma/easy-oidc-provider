@@ -1,7 +1,8 @@
 class ValidationError {
   constructor(id, description) {
-    this.id = id;
-    this.description = description;
+    this.name = 'ValidationError'    
+    this.code = id;
+    this.description = this.message = description;
   }
 }
 

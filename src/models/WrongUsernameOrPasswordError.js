@@ -1,7 +1,8 @@
 class WrongUsernameOrPasswordError {
-  constructor(id, description) {
-    this.id = id;
-    this.description = description;
+  constructor(email, description) {
+    this.name = 'WrongUsernameOrPasswordError'
+    this.username = email;
+    this.description = this.message = description;
   }
 }
 

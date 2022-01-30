@@ -1,7 +1,8 @@
 {
     "stateEncryptionKey": "STATE_ENCRYPTION_KEY",
     "codeEncryptionKey": "CODE_ENCRYPTION_KEY",
-    "jwtExpirySeconds": 432000,        
+    "sessionExpirySeconds": 15552000,
+    "jwtExpirySeconds": 432000,
     "wellKnownConfiguration": {
         "hosts_supported": ["YOUR_OP_HOST_DOMAIN"],
         "scopes_supported": [
@@ -50,7 +51,8 @@
         "authorizationCode": "oidc-authorization-codes",
         "ssoSession": "oidc-sso-sessions",
         "refreshToken": "oidc-refresh-tokens",
-        "clientCredential": "oidc-client-credentials"
+        "clientCredential": "oidc-client-credentials",
+        "idpConnection": "oidc-idp-connections"        
     },
     "clientAPICredentials": {
         "client_id": "CLIENT_CRUD_API_CLIENT_ID",

@@ -34,21 +34,31 @@ module.exports = ({ docClient, globalConfiguration }) => resource({
         var query_params = {
             TableName : globalConfiguration.dynamoDBTablesNames.clientCredential
         };
-        console.log(query);
-        
+        //console.log(query);
+        if (query.name || query.name) {
+            query_params.IndexName = 'client_name_index',
+            query_params.KeyConditionExpression = "client_name = :client_name",
+            query_params.ExpressionAttributeValues = {
+                ":client_name": query.name
+            }
+        }        
         docClient.query(query_params, function(err, data) {
-            res.set('X-Total-Count', data.Count);
-            res.json(data.Items); 
+            if(err){
+                res.status(err.statusCode||412).json(({status: err.statusCode, title: "get_clients", detail: JSON.stringify(err)}));                                
+            }else if(data) {
+                res.set('X-Total-Count', data.Count);
+                res.json(data.Items);
+            } 
         });
 	},
 
-	/** POST / - Create a new identity */
+	/** POST / - Create a new client_id */
 	create({ body }, res, next) {
         // validate name and callback_urls format
 		if (body.name == null) return res.status(412).json(({status: 412, title: "create_client", detail: "name missing in request"}));
         
-        var client_id = randtoken.generate(40);
-        var client_secret = uid.sync(64);
+        var client_id = body.client_id||randtoken.generate(40);
+        var client_secret = body.client_secret||uid.sync(64);
         var client = new Client(body.name, client_id, client_secret, body.callback_urls, body.scopes);                            
         // store client in the database
         const create_params = {
@@ -131,7 +141,7 @@ module.exports = ({ docClient, globalConfiguration }) => resource({
                 }         
             }            
             docClient.delete(delete_params, function(err, data) {
-                // ignore dynamodb error, just return the ldap returned identity
+                // ignore dynamodb error, just return the client
                 res.sendStatus(204)                    
             });
         }else {

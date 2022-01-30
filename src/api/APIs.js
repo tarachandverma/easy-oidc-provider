@@ -1,6 +1,7 @@
 const Router  =  require('express').Router;
 const utils  =  require('../lib/util');
 const Clients = require('../api/Clients');
+const IdpConnections = require('../api/IdpConnections');
 const ErrorHandler = require('../lib/ErrorHandler');
 const SingletonClientCredentialsCache = require('../client_credentials_cache');
 const expressJwt = require('express-jwt');
@@ -43,6 +44,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys }) => {
     let api = Router();
     
     api.use('/clients', validateAPIToken(globalConfiguration, cryptoKeys), Clients({ docClient, globalConfiguration }));
+    api.use('/idp_connections', validateAPIToken(globalConfiguration, cryptoKeys), IdpConnections({ docClient, globalConfiguration }));    
 
     // error handler    
     api.use(ErrorHandler);

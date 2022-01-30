@@ -19,12 +19,12 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
         var issuer = OP_HOST + "/";        
         // validate client_id
         if (req.body.client_id == null){
-            return res.status(400).send({error: 'invalid_request', error_description: 'client_id is missing'});
+            return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is missing');
         }
 
         const clientData = await utils.getClientCredentials(docClient, globalConfiguration, req.body.client_id);
         if (clientData ==null || clientData.Item ==null){
-            return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+            return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
         }
                 
         try {
@@ -77,7 +77,10 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, authenticationSc
                     }
                     return res.status(500).send(error);
                 }
-            });
+            }).catch( err => {
+                console.log("authentication_script.js load error:", err);
+                res.status(500).send(err);
+            } );
         } catch(err) {
             var error = { 
                 errors: [

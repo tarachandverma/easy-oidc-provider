@@ -1,6 +1,13 @@
 const request = require('request');
 module.exports = async function (user, params, configuration, callback) {
-    // TODO: add/remove claims to user as well as generate redirect during the login process
-    // you can make HTTP call to your backend API using 'request' module as well
-    return callback(null, user, params);
+  if((false/*some condition to set redirect here*/)) {
+    // set some response headers during the login from including a redirect via location here
+    var anyRedirectUrl = 'https://your-domain.com/redirector';
+    params.response_headers = params.response_headers || [];
+    if(params.request.query.prompt !== 'none') {
+        params.response_headers.push({name: 'location', value: anyRedirectUrl});
+    }
+    //console.log(params.response_headers);
+  }
+  callback(null, user, params);
 }

@@ -11,12 +11,14 @@ import OAuthToken from './oidc/OAuthToken.js';
 import WellKnownDiscoveryDocument from './oidc/WellKnownDiscoveryDocument.js'
 import LoginPage from './oidc/LoginPage.js'
 import UserInfo from './oidc/UserInfo.js'
+import Logout from './oidc/Logout.js'
 import APIs from './api/APIs.js';
 import cookieParser from 'cookie-parser';
 import jwkJson from '../signing-keys-and-certs/private_jwk.json';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './swagger.json';
-
+import * as fs from 'fs';
+import {cert_to_x5c} from './lib/util.js';
 const app = express()
 
 app.use(express.json()) // for parsing application/json
@@ -26,6 +28,8 @@ app.use(cookieParser());
 // load keys
 var privateKey = readFileSync('./signing-keys-and-certs/private.pem');
 var publicKey = readFileSync('./signing-keys-and-certs/public.pem');
+var x5c = cert_to_x5c(publicKey.toString());
+//console.log(x5c);
 
 // TODO: all of these keys must come from Vault per environment. PROD should not share any keys
 // this keyId needs to be common between all instances
@@ -38,8 +42,11 @@ var cryptoKeys = {
             {
                 "kid": keyId,
                 "kty": jwkJson.kty,
+                "use": "sig",                
                 "n": jwkJson.n,
-                "e": jwkJson.e
+                "e": jwkJson.e,
+                "x5t": keyId,                
+                "x5c": x5c
             }
         ] 
     },
@@ -49,7 +56,7 @@ var cryptoKeys = {
 }
 
 // initialize dynamodb
-const aws_dynamodb_endpoint = globalConfiguration.dynamoDBConfiguration.endpoint || 'http://localhost:8000';
+const aws_dynamodb_endpoint = process.env.DYNAMODB_ENDPOINT || globalConfiguration.dynamoDBConfiguration.endpoint || 'http://localhost:8000';
 const aws_region = globalConfiguration.dynamoDBConfiguration.region;
 process.env.AWS_NODEJS_CONNECTION_REUSE_ENABLED=1;
 let awsConfigurationOptions = {
@@ -83,9 +90,12 @@ app.use('/postauth/handler', PostAuthenticationHandler({ docClient, globalConfig
 
 // token API
 app.use('/oauth2/token', OAuthToken({ docClient, globalConfiguration, cryptoKeys, authenticationScriptConfiguration, globalHooksConfiguration }));
-
+    
 // UserInfo which validates client_id and other authentication request params
 app.use('/oauth2/userinfo', UserInfo({ globalConfiguration, cryptoKeys }));
+
+// logout to delete browser session
+app.use('/logout', Logout({ docClient, globalConfiguration, cryptoKeys, globalHooksConfiguration }));
 
 // swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -97,5 +107,7 @@ app.use('/api', APIs({ docClient, globalConfiguration, cryptoKeys }));
 app.get('/health', (req, res) => {
     res.status(200).json({ status: "OK" });
 });
-    
-app.listen(8080, () => console.log('OpenID-Connect server listening on port 8080!'))
+
+// end of local testing code
+const serverPort = process.env.PORT || 8080;   
+app.listen(serverPort, () => console.log('OpenID-Connect server listening on port', serverPort))

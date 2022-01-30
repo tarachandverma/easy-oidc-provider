@@ -17,22 +17,37 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
 
         // validate client_id
         if (queryObject.client_id == null){
-            return res.status(400).send({error: 'invalid_request', error_description: 'client_id is missing'});
+            return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is missing');
         }
 
         const clientData = await utils.getClientCredentials(docClient, globalConfiguration, queryObject.client_id);
         if (clientData ==null || clientData.Item ==null){
-            return res.status(400).send({error: 'invalid_request', error_description: 'client_id is not valid'});
+            return utils.sendErrorResponse(res, null, 'invalid_request', 'client_id is not valid');
         }
                 
         // validate redirect_uri
         if (queryObject.redirect_uri == null) {
-            return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is missing'});
+            return utils.sendErrorResponse(res, null, 'invalid_request', 'redirect_uri is missing');            
         }
         if (clientData.Item.callback_urls == null || !clientData.Item.callback_urls.includes(queryObject.redirect_uri)){
-            return res.status(400).send({error: 'invalid_request', error_description: 'redirect_uri is not allowed'});
+            return utils.sendErrorResponse(res, queryObject.redirect_uri, 'invalid_request', 'redirect_uri is not allowed');            
         }        
-        
+       
+        // validate scope
+        if (queryObject.scope == null) {
+            return utils.sendErrorResponse(res, queryObject.redirect_uri, 'invalid_request', 'scope is missing', queryObject.state);
+        }
+                
+        // enforce requesting nonce for implicit flow
+        if (queryObject.response_type == null) {
+            return utils.sendErrorResponse(res, queryObject.redirect_uri, 'invalid_request', 'response_type is missing', queryObject.state);
+        }
+                
+        // enforce requesting nonce for implicit flow
+        if ( ( queryObject.response_type.includes('id_token') || queryObject.response_type.includes('token') ) && queryObject.nonce == null) {
+            return utils.sendErrorResponse(res, queryObject.redirect_uri, 'invalid_request', 'nonce is required in implicit grant', queryObject.state)            
+        }
+                
         var issuer = utils.getCurrentOPHttpProtocol(req) + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported) + "/";        
         let cookie = req.cookies['session'];
         if(cookie) {
@@ -50,9 +65,13 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                     delete queryObject.state;
                     queryObject.state = utils.encryptPayload(originalState, cryptoKeys.stateEncryptionKey);
                 }
-                    
+                
+                // add legacy params
+                queryObject.protocol = "oauth2";
+                queryObject.client = queryObject.client_id;
+                                    
                 var queryParams = querystring.stringify(queryObject, "&", "=")                
-                const loginPageUrl = issuer + 'login-page?' + queryParams;
+                const loginPageUrl = issuer + 'login?' + queryParams;
                 res.writeHead(302, {
                   location: loginPageUrl
                 });
@@ -75,7 +94,7 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                 
                 var hookScript = '../../configuration/hooks/post_authentication_hook.js';
                 const handler = await import(hookScript);
-                // TODO: run a for loop of all the rules here to enhance to id_token
+                // run the hook to add/remove claims to id_token
                 handler.default(user, params, globalHooksConfiguration.configuration, function (error, user, params) {
                     //console.log(user)
                     //console.log(error);
@@ -141,6 +160,9 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                         }
                         return res.status(500).send(error);
                     }
+                }).catch( err => {
+                    console.log("post_authentication_hook.js load error:", err);
+                    res.status(500).send(err);
                 });
               } catch(err) {
                 var error = { 
@@ -151,22 +173,58 @@ module.exports = ({ docClient, globalConfiguration, cryptoKeys, globalHooksConfi
                 return res.status(500).send(error);
               }     
         }else{
-            if(queryObject.state) {
+            if(queryObject.prompt==='none') {
+                return utils.sendErrorResponse(res, queryObject.redirect_uri, 'login_required', 'user not logged-in', queryObject.state);
+            }
+            
+           if(queryObject.state) {
                 var originalState =  queryObject.state;
                 delete queryObject.state;
                 queryObject.state = utils.encryptPayload(originalState, cryptoKeys.stateEncryptionKey);
             }
+
+            // process identity providers connections
+            if(queryObject.connection_id) {
+                //console.log(queryObject.connection_id);
+                const idpConnectionData = await utils.getIdpConnection(docClient, globalConfiguration, queryObject.connection_id);
+                if (idpConnectionData ==null || idpConnectionData.Item ==null){
+                    return utils.sendErrorResponse(res, null, 'invalid_request', 'connection_id is not valid');
+                }
+                //console.log(idpConnectionData);
+                var idpConnection =  idpConnectionData.Item;                   
+                // validate redirect_uri
+                if (idpConnection.protocol == null) {
+                    return utils.sendErrorResponse(res, null, 'invalid_request', 'invalid connection protocol');            
+                }
+                if (idpConnection.protocol !== 'oauth2' || idpConnection.oauth2_relying_party_settings == null) {
+                    return utils.sendErrorResponse(res, null, 'invalid_request', 'only oauth2 connection protocol is supported right now');                               
+                } 
                 
-            var queryParams = querystring.stringify(queryObject, "&", "=")
-            
-            var location = null;
-            if(queryObject.prompt==='none') {
-                location = queryObject.redirect_uri + "?error=login_required" + "&error_description=user%20not%20logged-in";
-            } else{
-                location = '/login?' + queryParams
+                var paramsSerial = utils.encryptPayload(JSON.stringify(queryObject), cryptoKeys.stateEncryptionKey);
+                console.log(paramsSerial);
+                //console.log(err);
+                res.cookie("opstate", paramsSerial, { httpOnly: true, secure: true, sameSite: "none" });
+                                
+                const REDIRECT_URI = utils.getCurrentOPHttpProtocol(req) 
+                    + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported)
+                    + '/postauth/handler/' + queryObject.connection_id;
+                const IDP_AUTHORIZE_URL = idpConnection.oauth2_protocol_settings.authorization_endpoint +
+                    '?scope='+encodeURIComponent(idpConnection.oauth2_relying_party_settings.scopes_requested)
+                    +'&client_id='+idpConnection.oauth2_relying_party_settings.client_id
+                    +'&response_type=code'
+                    +'&redirect_uri='+ REDIRECT_URI
+                    +'&state='+queryObject.state
+                // redirect to Identity Provider  
+                res.writeHead(302, {
+                  location: IDP_AUTHORIZE_URL
+                });
+                return res.end();
+                
             }
+            var queryParams = querystring.stringify(queryObject, "&", "=")             
+            // redirect to login page            
             res.writeHead(302, {
-              location: location
+              location: '/login?' + queryParams
             });
             res.end();
         }

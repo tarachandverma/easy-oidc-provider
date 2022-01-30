@@ -4,8 +4,6 @@ module.exports = ({ globalConfiguration, cryptoKeys }) => {
     let api = Router();
 
     api.get('/openid-configuration', async (req, res) => {
-        // TODO: implement jwks publishing endpoint
-        // this is dummy keys, we need to generate real keys and add it here
         const CURRENT_HOST =  utils.getCurrentOPHttpProtocol(req) + "://" + utils.getCurrentOPHost(req, globalConfiguration.wellKnownConfiguration.hosts_supported);
         var response = {
             "issuer": CURRENT_HOST + "/",
@@ -23,8 +21,6 @@ module.exports = ({ globalConfiguration, cryptoKeys }) => {
     });
     
     api.get('/jwks.json', async (req, res) => {
-        // TODO: implement jwks publishing endpoint
-        // this is dummy keys, we need to generate real keys and add it here
         res.status(200).json(cryptoKeys.jwksJson);
     });
                 
