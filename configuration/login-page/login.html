@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#login-form {
+  max-width: 320;
+  margin: 0 auto;
+  padding: 20px;
+  background: #fafafa;
+  border: 1px solid #ccc;
+}
+#login-form h1 {
+  margin: 0 0 20px 0;
+}
+#login-form input {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 20px 0;
+  padding: 10px;
+}
+#login-form input[type=submit] {
+  border: 0;
+  padding: 15px;
+  background: #5b77bd;
+  color: #fff;
+  cursor: pointer;
+}
+html, body { font-family: arial, sans-serif; }
+</style>
+<script>
+function login(){
+  // (A) GET EMAIL + PASSWORD
+  var data = {
+    username : document.getElementById("username").value,
+    password : document.getElementById("password").value
+  }
+ 
+  // (B) Read other query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const scope = urlParams.get('scope');
+  if(scope) data.scope = scope;
+  const client_id = urlParams.get('client_id');
+  if(client_id) data.client_id = client_id;
+  const response_type = urlParams.get('response_type');
+  if(response_type) data.response_type = response_type;
+  const redirect_uri = urlParams.get('redirect_uri');
+  if(redirect_uri) data.redirect_uri = redirect_uri;
+  const nonce = urlParams.get('nonce');
+  if(nonce) data.nonce = nonce;
+  const state = urlParams.get('state');
+  if(state) data.state = state;      
+  
+  // (B) AJAX REQUEST
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/authenticate");
+  xhr.setRequestHeader('Content-type', 'application/json')  
+  xhr.onload = function() {
+    if (this.status == 200) { location.href = "home.html"; }
+    else { alert(this.response); }
+  };
+  xhr.send(JSON.stringify(data));
+  return false;
+}
+</script>
+</head>
+<body>
+<form id="login-form" onsubmit="return login()">
+  <h1>LOGIN</h1>
+  <input type="username" placeholder="Username" id="username" required/>
+  <input type="password" placeholder="Password" id="password" required/>
+  <input type="submit" value="Sign In"/>
+</form>
+</body>
+</html>

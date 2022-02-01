@@ -1,0 +1,61 @@
+{
+    "stateEncryptionKey": "STATE_ENCRYPTION_KEY",
+    "codeEncryptionKey": "CODE_ENCRYPTION_KEY",
+    "sessionExpirySeconds": 15552000,
+    "jwtExpirySeconds": 432000,
+    "wellKnownConfiguration": {
+        "hosts_supported": ["YOUR_OP_HOST_DOMAIN"],
+        "scopes_supported": [
+            "openid",
+            "profile",
+            "offline_access",
+            "given_name",
+            "family_name",
+            "email",
+            "email_verified"
+        ],
+        "grant_types_supported": [
+            "authorization_code",
+            "implicit",
+            "refresh_token",
+            "password",
+            "client_credentials",
+            "urn:ietf:params:oauth:grant-type:jwt-bearer" 
+        ],        
+        "response_types_supported": [
+            "code",
+            "token",
+            "id_token"
+        ],
+        "id_token_signing_alg_values_supported": [
+            "HS256",
+            "RS256"
+        ],
+        "claims_supported": [
+            "aud",
+            "email",
+            "email_verified",
+            "family_name",
+            "given_name",
+            "iat",
+            "exp",
+            "iss",
+            "sub"
+        ]                        
+    },
+    "dynamoDBConfiguration": {
+        "endpoint": "ADD_DYNAMODB_ENDPOINT_HERE",
+        "region": "AWS_REGION"
+    },
+    "dynamoDBTablesNames": {
+        "authorizationCode": "oidc-authorization-codes",
+        "ssoSession": "oidc-sso-sessions",
+        "refreshToken": "oidc-refresh-tokens",
+        "clientCredential": "oidc-client-credentials",
+        "idpConnection": "oidc-idp-connections"        
+    },
+    "clientAPICredentials": {
+        "client_id": "CLIENT_CRUD_API_CLIENT_ID",
+        "client_secret": "CLIENT_CRUD_API_CLIENT_SECRET"
+    }                   
+}

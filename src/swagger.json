@@ -1,0 +1,729 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "describes OIDC Clients Credentials APIs.",
+    "version": "1.0.0",
+    "title": "OIDC Client Credentials CRUD APIs"
+  },
+  "paths": {
+    "/api/clients": {
+      "post": {
+        "tags": [
+          "Client APIs"
+        ],
+        "summary": "Creates a new client in DB",
+        "description": "Creates a new client in DB",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "Request body",
+            "description": "Describes request body to create a new API client, supported scopes here: /.well-known/openid-configuration",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {              
+                "name": {
+                  "type": "string"
+                },
+                "callback_urls": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  } 
+                },
+                "scopes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  } 
+                }                
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Client is successfully created",
+            "headers": {
+              "Location": {
+                "type": "string",
+                "description": "URI Location of created client."
+              }
+            }
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "409": {
+            "description": "Client with same name already exist",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }          
+        }
+      },      
+      "get": {
+        "tags": [
+          "Client APIs"
+        ],
+        "summary": "Returns all clients matching one or more filter criterion",
+        "description": "Returns all clients matching filter criterion",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "returns clients name (wild card supported)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "returns number of clients, default=100, min=1, max=5000 when specified",
+            "type": "integer",
+            "minimum" : 1,
+            "maximum" : 5000
+          }          
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "identities": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Client"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/clients/{id}": {
+      "get": {
+        "tags": [
+          "Client APIs"
+        ],
+        "summary": "Retrieve client by client_id",
+        "description": "Retrieve client by client_id",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "client_id of requested client",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }                    
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "schema": {
+              "$ref": "#/definitions/Client"
+            }
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "client not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Client APIs"
+        ],
+        "summary": "Modifies parts of existing client in DB",
+        "description": "",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of client to update",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "Request body",
+            "description": "Describes request body to create a new API client, supported scopes here: /.well-known/openid-configuration",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {              
+                "name": {
+                  "type": "string"
+                },
+                "callback_urls": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  } 
+                },
+                "scopes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  } 
+                }                
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Client is successfully updated"
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Client APIs"
+        ],
+        "summary": "Deletes a client from DB",
+        "description": "Deletes client",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of client to return",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted"
+          },
+          "400": {
+            "description": "ID not supplied"
+          },
+          "404": {
+            "description": "ID not found"
+          }
+        }
+      }
+    },
+    "/api/idp_connections": {
+      "post": {
+        "tags": [
+          "Identity Provider Connections APIs"
+        ],
+        "summary": "Creates a new IdpConnection in DB",
+        "description": "Creates a new IdpConnection in DB",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "Request body",
+            "description": "Describes request body to create a new API IdpConnection",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {              
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },                
+                "protocol": {
+                  "type": "string",
+                  "enum": [
+                      "oauth2",
+                      "saml2"
+                  ]                  
+                },
+                "oauth2_protocol_settings": {
+                  "$ref": "#/definitions/OAuth2ProtocolSettings"
+                },
+                "oauth2_relying_party_settings": {
+                  "$ref": "#/definitions/RelyingPartySettings"
+                }                                                                
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "IdpConnection is successfully created",
+            "headers": {
+              "Location": {
+                "type": "string",
+                "description": "URI Location of created IdpConnection."
+              }
+            }
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "409": {
+            "description": "IdpConnection with same name already exist",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }          
+        }
+      },      
+      "get": {
+        "tags": [
+          "Identity Provider Connections APIs"
+        ],
+        "summary": "Returns all IdpConnections matching one or more filter criterion",
+        "description": "Returns all IdpConnections matching filter criterion",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "returns IdpConnections name (wild card supported)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "returns number of IdpConnections, default=100, min=1, max=5000 when specified",
+            "type": "integer",
+            "minimum" : 1,
+            "maximum" : 5000
+          }          
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "identities": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/IdpConnection"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/idp_connections/{id}": {
+      "get": {
+        "tags": [
+          "Identity Provider Connections APIs"
+        ],
+        "summary": "Retrieve IdpConnection by id",
+        "description": "Retrieve IdpConnection by id",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id of requested IdpConnection",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }                    
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "schema": {
+              "$ref": "#/definitions/IdpConnection"
+            }
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "IdpConnection not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Identity Provider Connections APIs"
+        ],
+        "summary": "Modifies parts of existing IdpConnection in DB",
+        "description": "",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of IdpConnection to update",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "Request body",
+            "description": "Describes request body to create a new API IdpConnection",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "protocol"                
+              ],
+              "properties": {              
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },                
+                "protocol": {
+                  "type": "string",
+                  "enum": [
+                      "oauth2",
+                      "saml2"
+                  ]                  
+                },
+                "oauth2_protocol_settings": {
+                  "$ref": "#/definitions/OAuth2ProtocolSettings"
+                },
+                "oauth2_relying_party_settings": {
+                  "$ref": "#/definitions/RelyingPartySettings"
+                }                            
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "IdpConnection is successfully updated"
+          },
+          "400": {
+            "description": "Authorization header missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Invalid Authorization token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "IdpConnection not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Identity Provider Connections APIs"
+        ],
+        "summary": "Deletes a IdpConnection from DB",
+        "description": "Deletes IdpConnection",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of IdpConnection to return",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted"
+          },
+          "400": {
+            "description": "ID not supplied"
+          },
+          "404": {
+            "description": "ID not found"
+          }
+        }
+      }
+    }       
+  },  
+  "definitions": {
+    "Client": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "string"
+        },
+        "callback_urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }                      
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }                      
+        }                        
+      }
+    },
+    "IdpConnection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+              "oauth2",
+              "saml2",
+              "other"
+          ]          
+        }                                 
+      }
+    },
+    "OAuth2ProtocolSettings": {
+      "type": "object",
+      "properties": {
+        "issuer": {
+          "type": "string"
+        },                    
+        "wellknown_endpoint": {
+          "type": "string"
+        },                    
+        "authorization_endpoint": {
+          "type": "string"
+        },
+        "token_endpoint": {
+          "type": "string"
+        },
+        "userinfo_endpoint": {
+          "type": "string"
+        },
+        "jwks_uri": {
+          "type": "string"
+        }                        
+      }                                    
+    },
+    "RelyingPartySettings": {
+      "type": "object",
+      "properties": {
+        "client_id": {
+          "type": "string"
+        },                    
+        "client_secret": {
+          "type": "string"
+        },
+        "client_secret_signing_key": {
+          "type": "string"
+        },                            
+        "scopes_requested": {
+          "type": "string"                      
+        },
+        "apple_team_id": {
+          "type": "string"                      
+        },
+        "apple_key_id": {
+          "type": "string"                      
+        }                                        
+      }                                    
+    },               
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    }   
+  }
+}

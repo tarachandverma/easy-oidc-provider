@@ -1,0 +1,15 @@
+# This persists data to host
+version: "3.8"
+
+services:
+  dynamodb-local:
+    container_name: dynamodb-local
+    image: amazon/dynamodb-local
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal
+    volumes:
+      - dynamodb_data:/home/dynamodblocal
+    ports:
+      - "8000:8000"
+
+volumes:
+  dynamodb_data:
